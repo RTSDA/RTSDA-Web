@@ -1,0 +1,13 @@
+{
+  "proxy": "http://localhost:80",
+  "scripts": {
+    "dev": "sudo http-server --cors -c-1 -p 80 -a localhost --mime-types '{\"env\":\"text/plain\"}'"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
