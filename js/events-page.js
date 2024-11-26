@@ -34,9 +34,9 @@ function formatDateTime(date, time) {
     return time ? `${formattedDate} at ${time}` : formattedDate;
 }
 
-// Helper function to get the correct HTML file for an event
+// Helper function to get the correct URL path for an event
 function getEventPage(title) {
-    if (!title) return 'events.html';
+    if (!title) return '/events';
     
     const titleLower = title.toLowerCase().trim();
     
@@ -46,25 +46,25 @@ function getEventPage(title) {
         if (titleLower.includes('bi-weekly') || 
             titleLower.includes('biweekly') || 
             titleLower.includes('bi weekly')) {
-            return 'Biweeklyprayer.html';
+            return '/biweeklyprayer';
         }
         if (titleLower.includes('monthly')) {
-            return 'Monthlyprayermeeting.html';
+            return '/monthlyprayermeeting';
         }
         if (titleLower.includes('new year') || titleLower.includes('end of year')) {
-            return 'newyearprayer.html';
+            return '/newyearprayer';
         }
-        return 'Prayer.html';
+        return '/prayer';
     }
     
     if (titleLower.includes('bible study')) {
-        return 'Biblestudyregister.html';
+        return '/biblestudyregister';
     }
     if (titleLower.includes('emmanuel')) {
-        return 'Emmanuel.html';
+        return '/emmanuel';
     }
     
-    return 'events.html';
+    return '/events';
 }
 
 // Helper function to convert any date format to Date object
