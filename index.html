@@ -369,7 +369,7 @@
         
         async function updateLatestSermon(youtubeService) {
             try {
-                const latestVideo = await youtubeService.getLatestVideo();
+                const latestVideo = await youtubeService.getLatestSermon();
                 if (latestVideo) {
                     const sermonTitle = document.getElementById('sermon-title');
                     const sermonDescription = document.getElementById('sermon-description');
