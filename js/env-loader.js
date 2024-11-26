@@ -14,9 +14,13 @@ window.__env = {
 function loadCloudflareEnv() {
     // In Cloudflare Pages, environment variables are available directly on the window object
     Object.keys(window.__env).forEach(key => {
-        if (window[key]) {
-            window.__env[key] = window[key];
-            console.log(`Loaded ${key} from Cloudflare Pages`);
+        // Check both direct window property and potential Cloudflare format
+        const value = window[key] || window[`__STATIC_${key}`] || window[`NEXT_PUBLIC_${key}`];
+        if (value) {
+            window.__env[key] = value;
+            console.log(`Loaded ${key} from Cloudflare Pages (length: ${value.length})`);
+        } else {
+            console.log(`Failed to load ${key} from Cloudflare Pages`);
         }
     });
 }
