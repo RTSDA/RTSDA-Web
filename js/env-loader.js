@@ -34,7 +34,6 @@ function validateFirebaseConfig() {
 function loadCloudflareEnv() {
     console.log('Searching for environment variables in Cloudflare Pages...');
     
-    const prefixes = ['', '__STATIC_', 'NEXT_PUBLIC_', 'REACT_APP_', 'VUE_APP_'];
     const envVars = [
         'FIREBASE_API_KEY',
         'FIREBASE_AUTH_DOMAIN',
@@ -46,136 +45,109 @@ function loadCloudflareEnv() {
         'YOUTUBE_API_KEY'
     ];
     
-    // Log all available window properties that might be environment variables
-    console.log('Available window properties:', 
-        Object.keys(window)
-            .filter(key => envVars.some(envVar => key.includes(envVar)))
-            .reduce((acc, key) => {
-                acc[key] = window[key] ? '[EXISTS]' : '[UNDEFINED]';
-                return acc;
-            }, {})
-    );
-    
-    // First check if variables are directly on window
-    envVars.forEach(key => {
-        if (window[key]) {
-            const value = window[key];
-            console.log(`Found ${key} directly on window:`, {
-                exists: true,
-                length: value.length,
-                isString: typeof value === 'string',
-                isEncrypted: value.includes('encrypted'),
-                startsWithAIza: key === 'FIREBASE_API_KEY' ? value.startsWith('AIza') : undefined
-            });
-            window.__env[key] = value;
+    // Log all properties of window that might contain our variables
+    const debugObj = {};
+    for (const key of Object.getOwnPropertyNames(window)) {
+        if (key.includes('FIREBASE') || key.includes('YOUTUBE')) {
+            debugObj[key] = typeof window[key];
         }
-    });
+    }
+    console.log('Found environment-like properties:', debugObj);
     
-    // Then try with prefixes
-    envVars.forEach(key => {
-        if (window.__env[key]) {
-            console.log(`Skipping ${key} as it's already loaded`);
-            return; // Skip if already found
+    // In Cloudflare Pages, env vars are injected into a global env object
+    const envSources = [
+        window.env,                    // Standard Cloudflare Pages injection
+        window.__env,                 // Our custom env object
+        window.process?.env,          // Node-style env
+        window.ENV,                   // Alternative env object
+        window._env_,                 // Alternative env object
+        window                        // Direct window properties
+    ];
+    
+    for (const envVar of envVars) {
+        // Already loaded
+        if (window.__env[envVar]) {
+            console.log(`${envVar} already loaded`);
+            continue;
         }
         
-        // Try all possible prefixes
-        prefixes.forEach(prefix => {
-            const fullKey = prefix + key;
-            let value = window[fullKey];
+        // Try each possible source
+        for (const source of envSources) {
+            if (!source) continue;
             
-            if (value) {
-                console.log(`Checking ${fullKey}:`, {
-                    exists: true,
-                    type: typeof value,
-                    length: value.length,
-                    isEncrypted: value.includes('encrypted'),
-                    startsWithAIza: key === 'FIREBASE_API_KEY' ? value.startsWith('AIza') : undefined
-                });
-                
-                // Handle encrypted values
-                if (typeof value === 'string' && value.includes('encrypted')) {
-                    console.log(`Found encrypted ${key} with prefix "${prefix}", checking window.__env`);
-                    // For encrypted values, Cloudflare should have already injected the decrypted value
-                    const decryptedValue = window.__env[key];
-                    if (decryptedValue) {
-                        console.log(`Found decrypted value for ${key}`);
-                        value = decryptedValue;
-                    } else {
-                        console.warn(`No decrypted value found for ${key}`);
-                    }
-                }
-
-                if (value && value.trim() !== '') {
-                    window.__env[key] = value;
-                    console.log(`Loaded ${key}:`, {
-                        length: value.length,
-                        startsWithAIza: key === 'FIREBASE_API_KEY' ? value.startsWith('AIza') : undefined
-                    });
+            // Try direct key
+            if (source[envVar]) {
+                window.__env[envVar] = source[envVar];
+                console.log(`Loaded ${envVar} from env source`);
+                break;
+            }
+            
+            // Try with common prefixes
+            const prefixes = ['', '__STATIC_', 'NEXT_PUBLIC_', 'REACT_APP_', 'VUE_APP_'];
+            for (const prefix of prefixes) {
+                const key = prefix + envVar;
+                if (source[key]) {
+                    window.__env[envVar] = source[key];
+                    console.log(`Loaded ${envVar} from env source with prefix ${prefix}`);
+                    break;
                 }
             }
-        });
-        
-        if (!window.__env[key]) {
-            console.warn(`Failed to load ${key} from Cloudflare Pages`);
         }
-    });
-
+        
+        if (!window.__env[envVar]) {
+            console.log(`Failed to load ${envVar} from any source`);
+        }
+    }
+    
     // Log final state
-    console.log('Final environment state:', Object.keys(window.__env).reduce((acc, key) => {
-        const value = window.__env[key];
-        acc[key] = {
-            exists: !!value,
-            length: value?.length || 0,
-            value: key === 'FIREBASE_API_KEY' ? 
-                (value?.startsWith('AIza') ? `${value.substring(0, 4)}...` : 'Invalid format') : 
-                '[REDACTED]',
-            isEncrypted: value?.includes('encrypted') || false
-        };
-        return acc;
-    }, {}));
+    const finalState = {};
+    for (const key of envVars) {
+        finalState[key] = window.__env[key] ? 
+            `[${typeof window.__env[key]}:${window.__env[key].length}]` : 
+            'NOT_FOUND';
+    }
+    console.log('Final environment state:', finalState);
 }
 
 // Function to load external config
 async function loadExternalConfig() {
     try {
-        // First try Cloudflare Pages environment variables
-        loadCloudflareEnv();
-        
-        // Check if we got all required variables
-        try {
-            validateFirebaseConfig();
-            console.log('Successfully loaded all required variables from Cloudflare');
-            return;
-        } catch (error) {
-            console.warn('Cloudflare environment validation failed:', error);
-            // Continue to try other sources
+        // Since config.external.js is now loaded directly in HTML, just check window.__env
+        if (window.__env) {
+            const configFromVars = {};
+            
+            // For each environment variable that uses template literals
+            for (const [key, value] of Object.entries(window.__env)) {
+                if (typeof value === 'string' && value.includes('${')) {
+                    // Try to get the actual value from Cloudflare
+                    const varName = value.match(/\$\{([^}]+)\}/)?.[1];
+                    if (varName) {
+                        const actualValue = await getEnvVar(varName);
+                        if (actualValue) {
+                            configFromVars[key] = actualValue;
+                        }
+                    }
+                } else {
+                    // Keep non-template values
+                    configFromVars[key] = value;
+                }
+            }
+            
+            // Update window.__env with any values we found
+            if (Object.keys(configFromVars).length > 0) {
+                Object.assign(window.__env, configFromVars);
+                console.log('Updated configuration with Cloudflare values');
+                return;
+            }
         }
-    } catch (error) {
-        console.warn('Failed to load Cloudflare environment variables:', error);
-    }
-
-    try {
-        // Fallback to external config file
-        console.log('Trying external config file...');
-        const response = await fetch('/config.external.js');
-        if (!response.ok) throw new Error('Failed to load external config');
         
-        const text = await response.text();
-        const configFunc = new Function('window', text);
-        const tempWindow = {};
-        configFunc(tempWindow);
-        
-        if (tempWindow.__remoteConfig) {
-            Object.assign(window.__env, tempWindow.__remoteConfig);
-            console.log('Loaded configuration from external config file');
-            return;
-        }
+        console.warn('No valid configuration found in external config');
     } catch (error) {
-        console.warn('Failed to load external config:', error);
+        console.warn('Failed to process external config:', error);
     }
 }
 
-// Load environment variables from .env file for local development
+// Function to load environment variables from .env file for local development
 async function loadEnvFile() {
     if (window.location.hostname !== 'localhost' && 
         window.location.hostname !== '127.0.0.1') {
@@ -208,48 +180,67 @@ async function loadEnvFile() {
 window.__env = window.__env || {};
 
 // Try loading configuration multiple times with delays
-let attempts = 0;
-const maxAttempts = 3;
-const attemptDelay = 1000; // 1 second between attempts
-
-function attemptLoad() {
-    attempts++;
-    console.log(`Configuration load attempt ${attempts}/${maxAttempts}`);
+async function attemptLoad(attempt = 1) {
+    console.log(`Configuration load attempt ${attempt}/3`);
     
-    Promise.all([
-        loadExternalConfig(),
-        loadEnvFile()
-    ]).then(() => {
+    try {
+        // Try loading from Cloudflare Pages first
+        await loadCloudflareEnv();
+        
+        // Validate the configuration
         try {
-            console.log('All configuration sources tried, validating...');
             validateFirebaseConfig();
-            console.log('Configuration validation successful');
-            window.__envResolve(window.__env);
-        } catch (error) {
-            console.warn(`Validation failed on attempt ${attempts}:`, error);
-            if (attempts < maxAttempts) {
-                console.log(`Retrying in ${attemptDelay}ms...`);
-                setTimeout(attemptLoad, attemptDelay);
-            } else {
-                console.error('All configuration attempts failed');
-                window.__envReject(error);
-                throw error;
+            console.log('Configuration validated successfully');
+            return true;
+        } catch (validationError) {
+            console.warn(`Cloudflare environment validation failed: ${validationError}`);
+            
+            // Try external config sources
+            await Promise.all([
+                loadExternalConfig(),
+                loadEnvFile()
+            ]);
+            
+            // Validate again after trying all sources
+            console.log('All configuration sources tried, validating...');
+            try {
+                validateFirebaseConfig();
+                console.log('Configuration validated successfully');
+                return true;
+            } catch (finalValidationError) {
+                console.warn(`Validation failed on attempt ${attempt}: ${finalValidationError}`);
+                
+                // If this is the last attempt, throw the error
+                if (attempt >= 3) {
+                    throw finalValidationError;
+                }
+                
+                // Otherwise retry
+                console.log(`Retrying in ${attempt * 1000}ms...`);
+                await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+                return attemptLoad(attempt + 1);
             }
         }
-    }).catch(error => {
-        console.error('Configuration load failed:', error);
-        if (attempts < maxAttempts) {
-            console.log(`Retrying in ${attemptDelay}ms...`);
-            setTimeout(attemptLoad, attemptDelay);
-        } else {
-            window.__envReject(error);
+    } catch (error) {
+        if (attempt >= 3) {
+            console.error('All configuration attempts failed');
             throw error;
         }
-    });
+        
+        console.log(`Retrying in ${attempt * 1000}ms...`);
+        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        return attemptLoad(attempt + 1);
+    }
 }
 
 // Start the first attempt
-attemptLoad();
+attemptLoad().catch(error => {
+    console.error('Configuration load failed:', error);
+    // Set a flag to indicate configuration failed
+    window.__envLoadFailed = true;
+    // Reject the ready promise
+    window.__envReadyReject(error);
+});
 
 // Export the ready promise
 export const envReady = window.__envReady;

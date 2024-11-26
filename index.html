@@ -25,7 +25,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="sdalogo.webp">
     <link rel="manifest" href="site.webmanifest">
     
-   
+    <!-- Environment Configuration
+    ================================================== -->
+    <script src="config.external.js"></script>
+    <script type="module" src="js/env-loader.js"></script>
 </head>
 
 <body id="top" class="ss-preload">
@@ -312,8 +315,6 @@
     <!-- Java Script
     ================================================== -->
     <script src="js/modernizr.js"></script>
-    <script type="module" src="js/env-loader.js"></script>
-    <script type="module" src="config.local.js"></script>
     <script src="js/jquery-3.2.1.min.js"></script>
     <script src="js/plugins.js"></script>
     <script src="js/main.js"></script>
@@ -323,6 +324,7 @@
 
     <!-- Firebase Scripts -->
     <script type="module">
+        import { envReady } from './js/env-loader.js';
         import { initializeFirebase } from './js/firebase-config.js?v=5';
         import YouTubeService from './js/youtube-service.js?v=5';
         
@@ -331,6 +333,9 @@
         async function initializeApp() {
             try {
                 setLoadingState(true, 'Initializing app...');
+                
+                // Wait for environment variables to be ready
+                await envReady;
                 
                 // Create YouTube service and wait for initialization
                 youtubeService = new YouTubeService();
@@ -349,68 +354,25 @@
         function setLoadingState(isLoading, message = 'Loading...') {
             const sermonTitle = document.getElementById('sermon-title');
             const sermonDescription = document.getElementById('sermon-description');
-            const loadingMessage = document.getElementById('video-loading-message');
-            const sermonContent = document.getElementById('sermon-content');
-            
             if (isLoading) {
-                if (sermonTitle) sermonTitle.textContent = 'Loading...';
-                if (sermonDescription) sermonDescription.textContent = message;
-                if (loadingMessage) {
-                    loadingMessage.textContent = message;
-                    loadingMessage.style.display = 'block';
-                }
-                if (sermonContent) sermonContent.dataset.state = 'loading';
-            } else {
-                if (loadingMessage) loadingMessage.style.display = 'none';
-                if (sermonContent) sermonContent.dataset.state = 'ready';
+                sermonTitle.textContent = message;
+                sermonDescription.textContent = 'Please wait...';
             }
         }
         
         function setErrorState(message) {
             const sermonTitle = document.getElementById('sermon-title');
             const sermonDescription = document.getElementById('sermon-description');
-            const loadingMessage = document.getElementById('video-loading-message');
-            const sermonContent = document.getElementById('sermon-content');
-            
-            if (sermonTitle) sermonTitle.textContent = 'Error';
-            if (sermonDescription) sermonDescription.textContent = message || 'Failed to load sermon';
-            if (loadingMessage) loadingMessage.style.display = 'none';
-            if (sermonContent) sermonContent.dataset.state = 'error';
+            sermonTitle.textContent = 'Error';
+            sermonDescription.textContent = message;
         }
         
-        function updateSermonContent(sermon) {
-            const sermonTitle = document.getElementById('sermon-title');
-            const sermonDescription = document.getElementById('sermon-description');
-            const sermonVideo = document.getElementById('sermon-video');
-            const sermonContent = document.getElementById('sermon-content');
-            
-            if (sermonTitle) sermonTitle.textContent = sermon.title || 'Latest Sermon';
-            if (sermonDescription) sermonDescription.textContent = sermon.description || 'No description available';
-            if (sermonVideo && sermon.videoId) {
-                sermonVideo.src = `https://www.youtube.com/embed/${sermon.videoId}`;
-            }
-            if (sermonContent) sermonContent.dataset.state = 'ready';
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
         }
-
-        async function updateLatestSermon(youtubeService) {
-            try {
-                setLoadingState(true, 'Fetching latest sermon...');
-                const sermon = await youtubeService.getLatestSermon();
-                
-                if (sermon) {
-                    updateSermonContent(sermon);
-                    setLoadingState(false);
-                } else {
-                    setErrorState('No sermon available');
-                }
-            } catch (error) {
-                console.error('Error updating sermon:', error);
-                setErrorState(error.message);
-            }
-        }
-
-        // Initialize the app when the DOM is ready
-        document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 
     <!-- events script -->
