@@ -1,9 +1,8 @@
-// Import the functions you need from the SDKs you need
+// Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue as getRemoteConfigValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
-import { getFirebaseConfig } from './env-config.js';
 
 let app;
 let db;
@@ -16,66 +15,67 @@ let cachedConfig = {};
 // Initialize Firebase and all services
 async function initializeFirebase() {
     try {
-        // Get config from environment
-        const firebaseConfig = await getFirebaseConfig();
-        console.log('Firebase configuration loaded successfully');
-        
+        if (!window.__env) {
+            console.error('Environment configuration missing');
+            throw new Error('Environment configuration not found');
+        }
+
+        // Log config presence (not values)
+        console.log('Config check:', {
+            apiKey: !!window.__env.FIREBASE_API_KEY,
+            authDomain: !!window.__env.FIREBASE_AUTH_DOMAIN,
+            projectId: !!window.__env.FIREBASE_PROJECT_ID,
+            storageBucket: !!window.__env.FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: !!window.__env.FIREBASE_MESSAGING_SENDER_ID,
+            appId: !!window.__env.FIREBASE_APP_ID,
+            measurementId: !!window.__env.FIREBASE_MEASUREMENT_ID
+        });
+
+        const firebaseConfig = {
+            apiKey: window.__env.FIREBASE_API_KEY,
+            authDomain: window.__env.FIREBASE_AUTH_DOMAIN,
+            projectId: window.__env.FIREBASE_PROJECT_ID,
+            storageBucket: window.__env.FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: window.__env.FIREBASE_MESSAGING_SENDER_ID,
+            appId: window.__env.FIREBASE_APP_ID,
+            measurementId: window.__env.FIREBASE_MEASUREMENT_ID
+        };
+
         // Initialize Firebase
+        console.log('Initializing Firebase...');
         app = initializeApp(firebaseConfig);
-        console.log('Firebase initialized successfully');
-        
-        // Initialize services
+        console.log('Firebase app initialized');
+
         db = getFirestore(app);
+        console.log('Firestore initialized');
+
         auth = getAuth(app);
+        console.log('Auth initialized');
+
+        remoteConfig = getRemoteConfig(app);
+        console.log('Remote config initialized');
+
+        // Set up Remote Config
+        await fetchAndActivate(remoteConfig);
+        console.log('Remote config activated');
         
-        const isDevelopment = window.location.hostname === 'localhost';
-        
-        if (isDevelopment) {
-            console.log('Running in development mode');
-            configInitialized = true;
-            remoteConfigInitialized = true;
-            
-            // Use local config in development
-            if (window.__remoteConfig && window.__remoteConfig.youtube_api_key) {
-                cachedConfig.youtube_api_key = window.__remoteConfig.youtube_api_key;
-                console.log('Using local YouTube API key');
-            } else {
-                console.warn('No YouTube API key found in local config');
-            }
+        // Cache the YouTube API key
+        const youtubeApiKey = getRemoteConfigValue(remoteConfig, 'youtube_api_key');
+        if (youtubeApiKey) {
+            cachedConfig['youtube_api_key'] = youtubeApiKey.asString();
+            console.log('Successfully cached YouTube API key from Remote Config');
         } else {
-            // Initialize Remote Config for production
-            remoteConfig = getRemoteConfig(app);
-            remoteConfig.settings = {
-                minimumFetchIntervalMillis: 3600000, // 1 hour
-                fetchTimeoutMillis: 60000 // 1 minute
-            };
-            
-            try {
-                await fetchAndActivate(remoteConfig);
-                console.log('Remote Config activated');
-                remoteConfigInitialized = true;
-                
-                // Cache the YouTube API key
-                const youtubeApiKey = getRemoteConfigValue(remoteConfig, 'youtube_api_key');
-                if (youtubeApiKey) {
-                    cachedConfig['youtube_api_key'] = youtubeApiKey.asString();
-                    console.log('Successfully cached YouTube API key from Remote Config');
-                } else {
-                    console.warn('No YouTube API key found in Remote Config');
-                }
-            } catch (configError) {
-                console.error('Error with Remote Config:', configError);
-                remoteConfigInitialized = false;
-            }
+            console.warn('No YouTube API key found in Remote Config');
         }
         
         configInitialized = true;
-        return true;
+        remoteConfigInitialized = true;
+        
+        return { app, db, remoteConfig };
     } catch (error) {
         console.error('Error initializing Firebase:', error);
-        if (error.message.includes('Missing required Firebase configuration')) {
-            console.error('Please check that all required environment variables are set');
-        }
+        console.error('Error details:', error.message);
+        if (error.code) console.error('Error code:', error.code);
         throw error;
     }
 }
@@ -87,14 +87,7 @@ function getValue(key) {
         return null;
     }
 
-    const isDevelopment = window.location.hostname === 'localhost';
-    
-    // In development, return from local config
-    if (isDevelopment) {
-        return window.__remoteConfig?.[key] || null;
-    }
-
-    // For production, check Remote Config
+    // Try Remote Config
     if (!remoteConfigInitialized) {
         console.warn('Remote Config not initialized when getting value for:', key);
         return null;
