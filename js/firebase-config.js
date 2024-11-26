@@ -20,6 +20,60 @@ async function initializeFirebase() {
             throw new Error('Environment configuration not found');
         }
 
+        // Log environment variables (safely)
+        console.log('Environment check:');
+        console.log('window.__env exists:', !!window.__env);
+        console.log('Direct window variables:');
+        [
+            'FIREBASE_API_KEY',
+            'FIREBASE_AUTH_DOMAIN',
+            'FIREBASE_PROJECT_ID',
+            'FIREBASE_STORAGE_BUCKET',
+            'FIREBASE_MESSAGING_SENDER_ID',
+            'FIREBASE_APP_ID',
+            'FIREBASE_MEASUREMENT_ID'
+        ].forEach(key => {
+            console.log(`${key} exists on window:`, !!window[key]);
+            console.log(`${key} exists in __env:`, !!window.__env[key]);
+            console.log(`${key} length:`, (window.__env[key] || '').length);
+        });
+
+        // Log all possible sources of the API key
+        console.log('API Key sources:');
+        console.log('window.FIREBASE_API_KEY:', typeof window.FIREBASE_API_KEY, window.FIREBASE_API_KEY ? 'exists' : 'undefined');
+        console.log('window.__env.FIREBASE_API_KEY:', typeof window.__env.FIREBASE_API_KEY, window.__env.FIREBASE_API_KEY ? 'exists' : 'undefined');
+        console.log('window.__STATIC_FIREBASE_API_KEY:', typeof window.__STATIC_FIREBASE_API_KEY, window.__STATIC_FIREBASE_API_KEY ? 'exists' : 'undefined');
+        console.log('API key starts with "AIza":', window.__env.FIREBASE_API_KEY?.startsWith('AIza'));
+
+        const firebaseConfig = {
+            apiKey: window.__env.FIREBASE_API_KEY?.trim(),
+            authDomain: window.__env.FIREBASE_AUTH_DOMAIN?.trim(),
+            projectId: window.__env.FIREBASE_PROJECT_ID?.trim(),
+            storageBucket: window.__env.FIREBASE_STORAGE_BUCKET?.trim(),
+            messagingSenderId: window.__env.FIREBASE_MESSAGING_SENDER_ID?.trim(),
+            appId: window.__env.FIREBASE_APP_ID?.trim(),
+            measurementId: window.__env.FIREBASE_MEASUREMENT_ID?.trim()
+        };
+
+        // Validate API key format
+        if (!firebaseConfig.apiKey) {
+            throw new Error('Firebase API key is missing');
+        }
+        if (!firebaseConfig.apiKey.startsWith('AIza')) {
+            throw new Error('Invalid Firebase API key format - should start with "AIza"');
+        }
+
+        // Log config structure (without values)
+        console.log('Firebase config validation:');
+        Object.entries(firebaseConfig).forEach(([key, value]) => {
+            console.log(`${key}:`, {
+                exists: !!value,
+                length: value?.length || 0,
+                isEmpty: value === '',
+                isWhitespace: value?.trim() === ''
+            });
+        });
+
         // Log config presence (not values)
         console.log('Config check:', {
             apiKey: !!window.__env.FIREBASE_API_KEY,
@@ -30,16 +84,6 @@ async function initializeFirebase() {
             appId: !!window.__env.FIREBASE_APP_ID,
             measurementId: !!window.__env.FIREBASE_MEASUREMENT_ID
         });
-
-        const firebaseConfig = {
-            apiKey: window.__env.FIREBASE_API_KEY,
-            authDomain: window.__env.FIREBASE_AUTH_DOMAIN,
-            projectId: window.__env.FIREBASE_PROJECT_ID,
-            storageBucket: window.__env.FIREBASE_STORAGE_BUCKET,
-            messagingSenderId: window.__env.FIREBASE_MESSAGING_SENDER_ID,
-            appId: window.__env.FIREBASE_APP_ID,
-            measurementId: window.__env.FIREBASE_MEASUREMENT_ID
-        };
 
         // Initialize Firebase
         console.log('Initializing Firebase...');

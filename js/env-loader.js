@@ -12,17 +12,50 @@ window.__env = {
 
 // Function to load environment variables from Cloudflare Pages
 function loadCloudflareEnv() {
-    // In Cloudflare Pages, environment variables are available directly on the window object
+    // Log all properties on window that might contain our variables
+    console.log('Searching for environment variables...');
+    
+    // Check for environment variables with different prefixes
+    const prefixes = ['', '__STATIC_', 'NEXT_PUBLIC_', 'REACT_APP_', 'VUE_APP_'];
+    
     Object.keys(window.__env).forEach(key => {
-        // Check both direct window property and potential Cloudflare format
-        const value = window[key] || window[`__STATIC_${key}`] || window[`NEXT_PUBLIC_${key}`];
+        // Try all possible prefixes
+        const value = prefixes.reduce((found, prefix) => {
+            if (found) return found;
+            const fullKey = prefix + key;
+            const val = window[fullKey];
+            if (val) {
+                console.log(`Found ${key} with prefix "${prefix}"`);
+            }
+            return val;
+        }, null);
+
         if (value) {
             window.__env[key] = value;
-            console.log(`Loaded ${key} from Cloudflare Pages (length: ${value.length})`);
+            console.log(`Loaded ${key} (length: ${value.length})`);
+            
+            // Special logging for API key
+            if (key === 'FIREBASE_API_KEY') {
+                console.log('API key validation:', {
+                    exists: true,
+                    length: value.length,
+                    startsWithAIza: value.startsWith('AIza'),
+                    containsWhitespace: /\s/.test(value)
+                });
+            }
         } else {
-            console.log(`Failed to load ${key} from Cloudflare Pages`);
+            console.log(`Failed to load ${key}`);
         }
     });
+
+    // Log final state of window.__env
+    console.log('Final environment state:', Object.keys(window.__env).reduce((acc, key) => {
+        acc[key] = {
+            exists: !!window.__env[key],
+            length: window.__env[key]?.length || 0
+        };
+        return acc;
+    }, {}));
 }
 
 // Function to load external config
