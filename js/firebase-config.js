@@ -3,6 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue as getRemoteConfigValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+import { envReady } from './env-loader.js';
 
 let app;
 let db;
@@ -12,104 +14,69 @@ let configInitialized = false;
 let remoteConfigInitialized = false;
 let cachedConfig = {};
 
+// Firebase configuration initialization
+function getFirebaseConfig() {
+    const env = window.__env || window.env;
+    if (!env) {
+        throw new Error('Environment configuration not found');
+    }
+
+    // Required Firebase configuration fields
+    const requiredFields = [
+        'FIREBASE_API_KEY',
+        'FIREBASE_AUTH_DOMAIN',
+        'FIREBASE_PROJECT_ID',
+        'FIREBASE_STORAGE_BUCKET',
+        'FIREBASE_MESSAGING_SENDER_ID',
+        'FIREBASE_APP_ID'
+    ];
+
+    // Check for missing required fields
+    const missingFields = requiredFields.filter(field => !env[field]);
+    if (missingFields.length > 0) {
+        throw new Error(`Missing required Firebase configuration fields: ${missingFields.join(', ')}`);
+    }
+
+    // Return Firebase configuration object
+    return {
+        apiKey: env.FIREBASE_API_KEY,
+        authDomain: env.FIREBASE_AUTH_DOMAIN,
+        projectId: env.FIREBASE_PROJECT_ID,
+        storageBucket: env.FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID,
+        appId: env.FIREBASE_APP_ID,
+        measurementId: env.FIREBASE_MEASUREMENT_ID || undefined
+    };
+}
+
 // Initialize Firebase and all services
 async function initializeFirebase() {
     try {
-        if (!window.__env) {
-            console.error('Environment configuration missing');
-            throw new Error('Environment configuration not found');
-        }
-
-        // Log environment variables (safely)
-        console.log('Environment check:');
-        console.log('window.__env exists:', !!window.__env);
-        console.log('Direct window variables:');
-        [
-            'FIREBASE_API_KEY',
-            'FIREBASE_AUTH_DOMAIN',
-            'FIREBASE_PROJECT_ID',
-            'FIREBASE_STORAGE_BUCKET',
-            'FIREBASE_MESSAGING_SENDER_ID',
-            'FIREBASE_APP_ID',
-            'FIREBASE_MEASUREMENT_ID'
-        ].forEach(key => {
-            console.log(`${key} exists on window:`, !!window[key]);
-            console.log(`${key} exists in __env:`, !!window.__env[key]);
-            console.log(`${key} length:`, (window.__env[key] || '').length);
-        });
-
-        // Log all possible sources of the API key
-        console.log('API Key sources:');
-        console.log('window.FIREBASE_API_KEY:', typeof window.FIREBASE_API_KEY, window.FIREBASE_API_KEY ? 'exists' : 'undefined');
-        console.log('window.__env.FIREBASE_API_KEY:', typeof window.__env.FIREBASE_API_KEY, window.__env.FIREBASE_API_KEY ? 'exists' : 'undefined');
-        console.log('window.__STATIC_FIREBASE_API_KEY:', typeof window.__STATIC_FIREBASE_API_KEY, window.__STATIC_FIREBASE_API_KEY ? 'exists' : 'undefined');
-        console.log('API key starts with "AIza":', window.__env.FIREBASE_API_KEY?.startsWith('AIza'));
-        console.log('API key is encrypted:', window.__env.FIREBASE_API_KEY?.includes('encrypted'));
-
-        // Get API key value
-        let apiKey = window.__env.FIREBASE_API_KEY?.trim();
-        if (apiKey?.includes('encrypted')) {
-            console.log('Found encrypted API key, checking window.__env for decrypted value');
-            apiKey = window.__env.FIREBASE_API_KEY;
-        }
-
-        const firebaseConfig = {
-            apiKey: apiKey,
-            authDomain: window.__env.FIREBASE_AUTH_DOMAIN?.trim(),
-            projectId: window.__env.FIREBASE_PROJECT_ID?.trim(),
-            storageBucket: window.__env.FIREBASE_STORAGE_BUCKET?.trim(),
-            messagingSenderId: window.__env.FIREBASE_MESSAGING_SENDER_ID?.trim(),
-            appId: window.__env.FIREBASE_APP_ID?.trim(),
-            measurementId: window.__env.FIREBASE_MEASUREMENT_ID?.trim()
-        };
-
-        // Validate API key format
-        if (!firebaseConfig.apiKey) {
-            console.error('API key validation failed:', {
-                exists: !!apiKey,
-                length: apiKey?.length || 0,
-                isEncrypted: apiKey?.includes('encrypted') || false,
-                startsWithAIza: apiKey?.startsWith('AIza') || false
-            });
-            throw new Error('Firebase API key is missing');
-        }
-        if (!firebaseConfig.apiKey.startsWith('AIza')) {
-            console.error('Invalid API key format:', {
-                length: firebaseConfig.apiKey.length,
-                isEncrypted: firebaseConfig.apiKey.includes('encrypted'),
-                prefix: firebaseConfig.apiKey.substring(0, 4)
-            });
-            throw new Error('Invalid Firebase API key format - should start with "AIza"');
-        }
-
-        // Log config structure (without values)
-        console.log('Firebase config validation:');
-        Object.entries(firebaseConfig).forEach(([key, value]) => {
-            console.log(`${key}:`, {
-                exists: !!value,
-                length: value?.length || 0,
-                isEmpty: value === '',
-                isWhitespace: value?.trim() === '',
-                isEncrypted: value?.includes('encrypted') || false,
-                startsWithAIza: key === 'apiKey' ? value?.startsWith('AIza') : undefined
-            });
-        });
-
-        // Log config presence (not values)
-        console.log('Config check:', {
-            apiKey: !!window.__env.FIREBASE_API_KEY,
-            authDomain: !!window.__env.FIREBASE_AUTH_DOMAIN,
-            projectId: !!window.__env.FIREBASE_PROJECT_ID,
-            storageBucket: !!window.__env.FIREBASE_STORAGE_BUCKET,
-            messagingSenderId: !!window.__env.FIREBASE_MESSAGING_SENDER_ID,
-            appId: !!window.__env.FIREBASE_APP_ID,
-            measurementId: !!window.__env.FIREBASE_MEASUREMENT_ID
-        });
-
-        // Initialize Firebase
-        console.log('Initializing Firebase...');
+        console.log('Firebase configuration loaded successfully');
+        
+        // Wait for environment variables to be ready
+        await envReady;
+        
+        // Initialize Firebase with error handling
+        const firebaseConfig = getFirebaseConfig();
+        console.log('Initializing Firebase with configuration');
         app = initializeApp(firebaseConfig);
-        console.log('Firebase app initialized');
+        
+        // Initialize optional Firebase features
+        if (firebaseConfig.measurementId) {
+            const analytics = getAnalytics(app);
+            console.log('Firebase Analytics initialized');
+        }
+        
+        console.log('Firebase initialization successful');
+
+        try {
+            remoteConfig = getRemoteConfig(app);
+            await fetchAndActivate(remoteConfig);
+            console.log('Remote Config fetched and activated');
+        } catch (configError) {
+            console.error('Error with Remote Config:', configError);
+        }
 
         db = getFirestore(app);
         console.log('Firestore initialized');
@@ -117,25 +84,25 @@ async function initializeFirebase() {
         auth = getAuth(app);
         console.log('Auth initialized');
 
-        remoteConfig = getRemoteConfig(app);
-        console.log('Remote config initialized');
+        remoteConfigInitialized = true;
+        configInitialized = true;
 
-        // Set up Remote Config
-        await fetchAndActivate(remoteConfig);
-        console.log('Remote config activated');
-        
-        // Cache the YouTube API key
+        // Cache and validate the YouTube API key
+        console.log('Attempting to fetch YouTube API key from Remote Config...');
         const youtubeApiKey = getRemoteConfigValue(remoteConfig, 'youtube_api_key');
+        console.log('YouTube API key status:', {
+            exists: !!youtubeApiKey,
+            type: youtubeApiKey ? typeof youtubeApiKey.asString() : 'undefined',
+            length: youtubeApiKey ? youtubeApiKey.asString().length : 0
+        });
+        
         if (youtubeApiKey) {
             cachedConfig['youtube_api_key'] = youtubeApiKey.asString();
             console.log('Successfully cached YouTube API key from Remote Config');
         } else {
             console.warn('No YouTube API key found in Remote Config');
         }
-        
-        configInitialized = true;
-        remoteConfigInitialized = true;
-        
+
         return { app, db, remoteConfig };
     } catch (error) {
         console.error('Error initializing Firebase:', error);
@@ -147,6 +114,8 @@ async function initializeFirebase() {
 
 // Helper function to get config values
 function getValue(key) {
+    console.log(`Getting value for key: ${key}`);
+    
     if (!configInitialized) {
         console.warn('Firebase not initialized when getting value for:', key);
         return null;
@@ -161,9 +130,18 @@ function getValue(key) {
     // Try Remote Config
     if (remoteConfig) {
         try {
+            console.log(`Fetching ${key} from Remote Config...`);
             const value = getRemoteConfigValue(remoteConfig, key);
             if (value) {
-                return value.asString();
+                const stringValue = value.asString();
+                console.log(`Successfully retrieved ${key} from Remote Config:`, {
+                    exists: true,
+                    length: stringValue.length,
+                    type: typeof stringValue
+                });
+                return stringValue;
+            } else {
+                console.warn(`No value found in Remote Config for key: ${key}`);
             }
         } catch (error) {
             console.warn(`Error getting ${key} from Remote Config:`, error);
@@ -171,7 +149,15 @@ function getValue(key) {
     }
 
     // Fallback to cached config
-    return cachedConfig[key] || null;
+    console.log(`Checking cached config for ${key}...`);
+    const cachedValue = cachedConfig[key];
+    console.log(`Cached value status for ${key}:`, {
+        exists: !!cachedValue,
+        type: typeof cachedValue,
+        length: cachedValue ? cachedValue.length : 0
+    });
+    
+    return cachedValue || null;
 }
 
 // Create a service class to match Android implementation

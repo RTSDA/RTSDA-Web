@@ -1,1 +1,8 @@
 /* /index.html 200
+/admin/* /admin.html 200
+/about/* /about.html 200
+/contact/* /contact.html 200
+/events/* /events.html 200
+/ministries/* /ministries.html 200
+/prayer/* /prayer.html 200
+/livestream/* /livestream.html 200
