@@ -2,9 +2,10 @@
 window.__env = {};
 
 // Create a promise that will resolve when the configuration is ready
+let resolveEnvReady, rejectEnvReady;
 window.__envReady = new Promise((resolve, reject) => {
-    window.__envResolve = resolve;
-    window.__envReject = reject;
+    resolveEnvReady = resolve;
+    rejectEnvReady = reject;
 });
 
 // Function to validate Firebase configuration
@@ -46,10 +47,29 @@ function loadCloudflareEnv() {
     ];
     
     // Log all properties of window that might contain our variables
+    console.log('Window object:', {
+        hasEnv: 'env' in window,
+        env: window.env ? Object.keys(window.env) : null,
+        hasProcess: 'process' in window,
+        processEnv: window.process?.env ? Object.keys(window.process.env) : null,
+        hasENV: 'ENV' in window,
+        ENV: window.ENV ? Object.keys(window.ENV) : null,
+        has_env_: '_env_' in window,
+        _env_: window._env_ ? Object.keys(window._env_) : null
+    });
+    
+    // Log all properties that look like environment variables
     const debugObj = {};
     for (const key of Object.getOwnPropertyNames(window)) {
-        if (key.includes('FIREBASE') || key.includes('YOUTUBE')) {
-            debugObj[key] = typeof window[key];
+        if (key.includes('FIREBASE') || key.includes('YOUTUBE') || 
+            key.includes('env') || key.includes('ENV') || 
+            key.includes('config') || key.includes('CONFIG')) {
+            debugObj[key] = {
+                type: typeof window[key],
+                value: typeof window[key] === 'string' ? 
+                    (key.includes('KEY') ? '[REDACTED]' : window[key]) : 
+                    (window[key] ? '[EXISTS]' : '[UNDEFINED]')
+            };
         }
     }
     console.log('Found environment-like properties:', debugObj);
@@ -64,6 +84,7 @@ function loadCloudflareEnv() {
         window                        // Direct window properties
     ];
     
+    // Try each variable
     for (const envVar of envVars) {
         // Already loaded
         if (window.__env[envVar]) {
@@ -75,23 +96,19 @@ function loadCloudflareEnv() {
         for (const source of envSources) {
             if (!source) continue;
             
-            // Try direct key
-            if (source[envVar]) {
-                window.__env[envVar] = source[envVar];
-                console.log(`Loaded ${envVar} from env source`);
-                break;
-            }
-            
             // Try with common prefixes
-            const prefixes = ['', '__STATIC_', 'NEXT_PUBLIC_', 'REACT_APP_', 'VUE_APP_'];
+            const prefixes = ['', '__STATIC_', 'NEXT_PUBLIC_', 'REACT_APP_', 'VUE_APP_', 'VITE_'];
             for (const prefix of prefixes) {
                 const key = prefix + envVar;
                 if (source[key]) {
                     window.__env[envVar] = source[key];
-                    console.log(`Loaded ${envVar} from env source with prefix ${prefix}`);
+                    console.log(`Loaded ${envVar} from source with prefix "${prefix}"`);
                     break;
                 }
             }
+            
+            // Break if we found the variable
+            if (window.__env[envVar]) break;
         }
         
         if (!window.__env[envVar]) {
@@ -100,13 +117,10 @@ function loadCloudflareEnv() {
     }
     
     // Log final state
-    const finalState = {};
-    for (const key of envVars) {
-        finalState[key] = window.__env[key] ? 
-            `[${typeof window.__env[key]}:${window.__env[key].length}]` : 
-            'NOT_FOUND';
-    }
-    console.log('Final environment state:', finalState);
+    console.log('Final environment state:', {
+        loadedVars: Object.keys(window.__env),
+        missingVars: envVars.filter(key => !window.__env[key])
+    });
 }
 
 // Function to load external config
@@ -234,12 +248,15 @@ async function attemptLoad(attempt = 1) {
 }
 
 // Start the first attempt
-attemptLoad().catch(error => {
+attemptLoad().then(() => {
+    console.log('Configuration loaded successfully');
+    resolveEnvReady(window.__env);
+}).catch(error => {
     console.error('Configuration load failed:', error);
     // Set a flag to indicate configuration failed
     window.__envLoadFailed = true;
     // Reject the ready promise
-    window.__envReadyReject(error);
+    rejectEnvReady(error);
 });
 
 // Export the ready promise

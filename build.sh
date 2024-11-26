@@ -10,9 +10,10 @@ echo "FIREBASE_MESSAGING_SENDER_ID exists: ${FIREBASE_MESSAGING_SENDER_ID:+yes}"
 echo "FIREBASE_APP_ID exists: ${FIREBASE_APP_ID:+yes}"
 echo "FIREBASE_MEASUREMENT_ID exists: ${FIREBASE_MEASUREMENT_ID:+yes}"
 
-# Generate the environment configuration
-cat > js/config.js << EOL
-window.__env = {
+# Generate the environment configuration for Cloudflare Pages
+cat > config.js << EOL
+// Cloudflare Pages environment variables
+window.env = {
     FIREBASE_API_KEY: '${FIREBASE_API_KEY}',
     FIREBASE_AUTH_DOMAIN: '${FIREBASE_AUTH_DOMAIN}',
     FIREBASE_PROJECT_ID: '${FIREBASE_PROJECT_ID}',
@@ -22,11 +23,21 @@ window.__env = {
     FIREBASE_MEASUREMENT_ID: '${FIREBASE_MEASUREMENT_ID}'
 };
 
+// Also set them as static environment variables for compatibility
+window.__STATIC_FIREBASE_API_KEY = '${FIREBASE_API_KEY}';
+window.__STATIC_FIREBASE_AUTH_DOMAIN = '${FIREBASE_AUTH_DOMAIN}';
+window.__STATIC_FIREBASE_PROJECT_ID = '${FIREBASE_PROJECT_ID}';
+window.__STATIC_FIREBASE_STORAGE_BUCKET = '${FIREBASE_STORAGE_BUCKET}';
+window.__STATIC_FIREBASE_MESSAGING_SENDER_ID = '${FIREBASE_MESSAGING_SENDER_ID}';
+window.__STATIC_FIREBASE_APP_ID = '${FIREBASE_APP_ID}';
+window.__STATIC_FIREBASE_MEASUREMENT_ID = '${FIREBASE_MEASUREMENT_ID}';
+
 // Log when config is loaded (no sensitive data)
 console.log('Environment configuration loaded at:', new Date().toISOString());
 EOL
 
 # Clean up any sensitive files and development artifacts
 rm -rf .git
-rm -f .env config.*.js env-*.js
-rm -f build.sh
+rm -f .env env-*.js
+
+# Don't remove config.js or build.sh as they're needed
