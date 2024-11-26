@@ -92,6 +92,15 @@ function getDate(event) {
     return new Date(event.startDate);
 }
 
+// Handle client-side navigation
+function navigateToEvent(eventTitle, event) {
+    event.preventDefault();
+    const eventUrl = getEventPage(eventTitle);
+    console.log('events-page.js: Navigating to:', eventUrl);
+    history.pushState({}, '', eventUrl);
+    // Add any additional navigation logic here if needed
+}
+
 // Load and display existing events
 async function loadEvents() {
     console.log('events-page.js: Loading events...');
@@ -162,7 +171,7 @@ async function loadEvents() {
                 <div class="column event-block">
                     <div class="event-block__content">
                         <h3>
-                            <a href="${eventUrl}" class="event-block__title">
+                            <a href="${eventUrl}" onclick="navigateToEvent('${event.title.replace(/'/g, "\\'")}', event)" class="event-block__title">
                                 ${event.title || 'Untitled Event'}
                             </a>
                         </h3>
@@ -270,6 +279,7 @@ async function editEvent(eventId) {
 // Make functions available globally
 window.deleteEvent = deleteEvent;
 window.editEvent = editEvent;
+window.navigateToEvent = navigateToEvent;
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', async () => {
