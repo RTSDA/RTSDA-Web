@@ -46,7 +46,7 @@ async function applyCommonConfigs() {
 
 // Handle feature toggles based on current page
 function handleFeatureToggles() {
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const currentPage = window.location.pathname.split('/').pop() || 'index';
     
     // Prayer request feature toggle
     const prayerEnabled = configService.isPrayerRequestEnabled();
@@ -64,19 +64,19 @@ function handleFeatureToggles() {
 
     // Page-specific handling
     switch (currentPage.toLowerCase()) {
-        case 'prayer.html':
+        case 'prayer':
             if (!prayerEnabled) {
-                window.location.href = 'index.html';
+                window.location.href = '/';
             }
             break;
             
-        case 'livestream.html':
+        case 'livestream':
             if (!livestreamEnabled) {
-                window.location.href = 'index.html';
+                window.location.href = '/';
             }
             break;
             
-        case 'admin.html':
+        case 'admin':
             // Admin-specific configurations
             const adminElements = document.querySelectorAll('.admin-section');
             adminElements.forEach(element => {

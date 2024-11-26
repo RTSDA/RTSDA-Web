@@ -26,7 +26,7 @@
             const eventId = urlParams.get('id');
             
             if (!eventId) {
-                window.location.href = 'events.html';
+                window.location.href = '/events';
                 return;
             }
             
@@ -91,13 +91,13 @@
                                 </div>
                                 
                                 <div class="event-actions">
-                                    <a href="events.html" class="btn btn--stroke">Back to Events</a>
+                                    <a href="/events" class="btn btn--stroke">Back to Events</a>
                                 </div>
                             </div>
                         </div>
                     `;
                 } else {
-                    window.location.href = 'events.html';
+                    window.location.href = '/events';
                 }
             } catch (error) {
                 console.error("Error fetching event: ", error);
@@ -107,7 +107,7 @@
                             <h1 class="display-1">Error</h1>
                             <p>Error loading event. Please try again later.</p>
                             <div class="event-actions">
-                                <a href="events.html" class="btn btn--stroke">Back to Events</a>
+                                <a href="/events" class="btn btn--stroke">Back to Events</a>
                             </div>
                         </div>
                     </div>
@@ -129,21 +129,21 @@
     <!-- header -->
     <header class="s-header">
         <div class="header-logo">
-            <a class="site-logo" href="index.html">
+            <a class="site-logo" href="/">
                 <img id=logo src="sdalogo.webp" alt="Homepage">
             </a>
         </div>
 
         <nav class="header-nav-wrap">
             <ul class="header-nav">
-                <li><a href="index.html" title="Home">Home</a></li>
-                <li><a href="about.html" title="About">About</a></li>
-                <li class="current"><a href="events.html" title="Services">Events</a></li>
-                <li><a href="contact.html" title="Contact us">Contact</a></li>
-                <li><a href="ministries.html" title="Ministries">Ministries</a></li>
+                <li><a href="/" title="Home">Home</a></li>
+                <li><a href="/about" title="About">About</a></li>
+                <li class="current"><a href="/events" title="Services">Events</a></li>
+                <li><a href="/contact" title="Contact us">Contact</a></li>
+                <li><a href="/ministries" title="Ministries">Ministries</a></li>
                 <li><a href="https://rtsda.updates.church" target="_blank" title="Bulletin">Bulletin</a></li>
                 <li><a href="https://adventistgiving.org/donate/AN4MJG" target="_blank" title="Online Giving">Online Giving</a></li>
-                <li><a href="livestream.html" title="Live Stream">Live Stream</a></li>
+                <li><a href="/livestream" title="Live Stream">Live Stream</a></li>
             </ul>
         </nav>
 
