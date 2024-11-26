@@ -36,34 +36,48 @@ function formatDateTime(date, time) {
 
 // Helper function to get the correct URL path for an event
 function getEventPage(title) {
-    if (!title) return '/events';
+    console.log('events-page.js: getEventPage called with title:', title);
+    
+    if (!title) {
+        console.log('events-page.js: No title provided, returning /events');
+        return '/events';
+    }
     
     const titleLower = title.toLowerCase().trim();
+    console.log('events-page.js: Processed title:', titleLower);
     
     // Check for specific prayer events first
     if (titleLower.includes('prayer')) {
+        console.log('events-page.js: Prayer event detected');
         // Check for specific prayer meetings first
         if (titleLower.includes('bi-weekly') || 
             titleLower.includes('biweekly') || 
             titleLower.includes('bi weekly')) {
+            console.log('events-page.js: Biweekly prayer detected, returning /biweeklyprayer');
             return '/biweeklyprayer';
         }
         if (titleLower.includes('monthly')) {
+            console.log('events-page.js: Monthly prayer detected, returning /monthlyprayermeeting');
             return '/monthlyprayermeeting';
         }
         if (titleLower.includes('new year') || titleLower.includes('end of year')) {
+            console.log('events-page.js: New Year prayer detected, returning /newyearprayer');
             return '/newyearprayer';
         }
+        console.log('events-page.js: Generic prayer detected, returning /prayer');
         return '/prayer';
     }
     
     if (titleLower.includes('bible study')) {
+        console.log('events-page.js: Bible study detected, returning /biblestudyregister');
         return '/biblestudyregister';
     }
     if (titleLower.includes('emmanuel')) {
+        console.log('events-page.js: Emmanuel event detected, returning /emmanuel');
         return '/emmanuel';
     }
     
+    console.log('events-page.js: No specific event type detected, returning /events');
     return '/events';
 }
 
@@ -80,22 +94,25 @@ function getDate(event) {
 
 // Load and display existing events
 async function loadEvents() {
-    console.log('Starting events load...');
+    console.log('events-page.js: Loading events...');
+    const eventContainer = document.getElementById('events-container');
+    
+    if (!eventContainer) {
+        console.error('events-page.js: Event container not found');
+        return;
+    }
+    
     try {
         // Initialize Firebase first
         await initializeFirebase();
+        console.log('events-page.js: Firebase initialized');
         
         if (!db) {
             throw new Error('Firebase database not initialized');
         }
         
-        console.log('Firebase initialized successfully, fetching events...');
+        console.log('events-page.js: Firebase initialized successfully, fetching events...');
         
-        const eventsList = document.getElementById('events-container');
-        if (!eventsList) {
-            throw new Error('Events container not found');
-        }
-
         const eventsRef = collection(db, 'events');
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -106,12 +123,12 @@ async function loadEvents() {
             orderBy('startDate', 'asc')
         );
         
-        console.log('Executing query...');
+        console.log('events-page.js: Executing query...');
         const querySnapshot = await getDocs(q);
-        console.log('Query complete, processing results...');
+        console.log('events-page.js: Query complete, found', querySnapshot.size, 'events');
         
         if (querySnapshot.empty) {
-            eventsList.innerHTML = `
+            eventContainer.innerHTML = `
                 <div class="column event-block">
                     <div class="event-block__content">
                         <h3>No Upcoming Events</h3>
@@ -134,7 +151,7 @@ async function loadEvents() {
             }))
             .sort((a, b) => a.startDate - b.startDate);
         
-        console.log('Processed events:', events);
+        console.log('events-page.js: Processed events:', events);
         
         // Generate HTML for events
         const eventsHTML = events.map(event => {
@@ -166,13 +183,13 @@ async function loadEvents() {
             `;
         }).join('');
         
-        eventsList.innerHTML = eventsHTML;
+        eventContainer.innerHTML = eventsHTML;
         
     } catch (error) {
-        console.error('Error fetching events:', error);
-        const eventsList = document.getElementById('events-container');
-        if (eventsList) {
-            eventsList.innerHTML = `
+        console.error('events-page.js: Error fetching events:', error);
+        const eventContainer = document.getElementById('events-container');
+        if (eventContainer) {
+            eventContainer.innerHTML = `
                 <div class="column event-block">
                     <div class="event-block__content">
                         <h3>Error Loading Events</h3>

@@ -23,34 +23,48 @@ function formatDateTime(date, time) {
 
 // Helper function to get the correct HTML file for an event
 function getEventPage(title) {
-    if (!title) return '/events';
+    console.log('getEventPage called with title:', title);
+    
+    if (!title) {
+        console.log('No title provided, returning /events');
+        return '/events';
+    }
     
     const titleLower = title.toLowerCase().trim();
+    console.log('Processed title:', titleLower);
     
     // Check for specific prayer events first
     if (titleLower.includes('prayer')) {
+        console.log('Prayer event detected');
         // Check for specific prayer meetings first
         if (titleLower.includes('bi-weekly') || 
             titleLower.includes('biweekly') || 
             titleLower.includes('bi weekly')) {
+            console.log('Biweekly prayer detected, returning /biweeklyprayer');
             return '/biweeklyprayer';
         }
         if (titleLower.includes('monthly')) {
+            console.log('Monthly prayer detected, returning /monthlyprayermeeting');
             return '/monthlyprayermeeting';
         }
         if (titleLower.includes('new year') || titleLower.includes('end of year')) {
+            console.log('New Year prayer detected, returning /newyearprayer');
             return '/newyearprayer';
         }
+        console.log('Generic prayer detected, returning /prayer');
         return '/prayer';
     }
     
     if (titleLower.includes('bible study')) {
+        console.log('Bible study detected, returning /biblestudyregister');
         return '/biblestudyregister';
     }
     if (titleLower.includes('emmanuel')) {
+        console.log('Emmanuel event detected, returning /emmanuel');
         return '/emmanuel';
     }
     
+    console.log('No specific event type detected, returning /events');
     return '/events';
 }
 
@@ -66,11 +80,11 @@ function getDate(event) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('DOM loaded, initializing events...');
+    console.log('index-events.js: DOM loaded, initializing events...');
     const eventsContainer = document.getElementById('events-container');
     
     if (!eventsContainer) {
-        console.error('Events container not found');
+        console.error('index-events.js: Events container not found');
         return;
     }
     
@@ -82,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             throw new Error('Firebase database not initialized');
         }
         
-        console.log('Firebase initialized successfully, fetching events...');
+        console.log('index-events.js: Firebase initialized successfully, fetching events...');
         const eventsRef = collection(db, 'events');
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -93,9 +107,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             orderBy('startDate', 'asc')
         );
         
-        console.log('Executing query...');
+        console.log('index-events.js: Executing query...');
         const querySnapshot = await getDocs(q);
-        console.log('Query complete, processing results...');
+        console.log('index-events.js: Query complete, found', querySnapshot.size, 'events');
         
         if (querySnapshot.empty) {
             eventsContainer.innerHTML = `
