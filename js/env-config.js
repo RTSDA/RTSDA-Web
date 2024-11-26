@@ -7,52 +7,36 @@ function getConfig() {
     try {
         // Try window.__env first (set by env-loader.js)
         if (typeof window !== 'undefined' && window.__env) {
-            configCache = window.__env;
-            return window.__env;
-        }
-        
-        // Try process.env for Node.js environment
-        if (typeof process !== 'undefined' && process.env) {
-            const envVars = {};
+            // Log environment status
+            console.log('Environment variables status:', Object.keys(window.__env).reduce((acc, key) => {
+                acc[key] = !!window.__env[key];
+                return acc;
+            }, {}));
+
+            // Verify that we have the required Firebase configuration
             const requiredKeys = [
                 'FIREBASE_API_KEY',
                 'FIREBASE_AUTH_DOMAIN',
                 'FIREBASE_PROJECT_ID',
                 'FIREBASE_STORAGE_BUCKET',
                 'FIREBASE_MESSAGING_SENDER_ID',
-                'FIREBASE_APP_ID',
-                'FIREBASE_MEASUREMENT_ID',
-                'YOUTUBE_API_KEY',
-                'GOOGLE_MAPS_API_KEY'
+                'FIREBASE_APP_ID'
             ];
-            
-            requiredKeys.forEach(key => {
-                if (process.env[key]) {
-                    envVars[key] = process.env[key];
-                }
-            });
-            
-            if (Object.keys(envVars).length > 0) {
-                configCache = envVars;
-                return envVars;
-            }
-        }
-        
-        // Try Cloudflare Pages environment
-        if (typeof _env !== 'undefined') {
-            configCache = _env;
-            return _env;
-        }
 
-        // Use default configuration if nothing else is available
-        if (window.__env) {
+            const missingKeys = requiredKeys.filter(key => !window.__env[key]);
+            if (missingKeys.length > 0) {
+                console.error('Missing required environment variables:', missingKeys);
+                throw new Error('Missing required environment variables: ' + missingKeys.join(', '));
+            }
+
             configCache = window.__env;
             return window.__env;
         }
-
-        throw new Error('No environment configuration found. Please ensure environment variables are properly set and env-loader.js is loaded before other scripts.');
+        
+        console.error('No environment configuration found');
+        throw new Error('No environment configuration found');
     } catch (error) {
-        console.error('Error accessing config:', error);
+        console.error('Error loading environment configuration:', error);
         throw error;
     }
 }

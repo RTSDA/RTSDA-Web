@@ -1,18 +1,40 @@
 // Default development configuration
 window.__env = {
-    FIREBASE_API_KEY: 'your_firebase_api_key_here',
-    FIREBASE_AUTH_DOMAIN: 'your_project_id.firebaseapp.com',
-    FIREBASE_PROJECT_ID: 'your_project_id',
-    FIREBASE_STORAGE_BUCKET: 'your_project_id.appspot.com',
-    FIREBASE_MESSAGING_SENDER_ID: 'your_sender_id',
-    FIREBASE_APP_ID: 'your_app_id',
-    FIREBASE_MEASUREMENT_ID: 'your_measurement_id',
-    YOUTUBE_API_KEY: 'your_youtube_api_key_here'
+    FIREBASE_API_KEY: '',
+    FIREBASE_AUTH_DOMAIN: '',
+    FIREBASE_PROJECT_ID: '',
+    FIREBASE_STORAGE_BUCKET: '',
+    FIREBASE_MESSAGING_SENDER_ID: '',
+    FIREBASE_APP_ID: '',
+    FIREBASE_MEASUREMENT_ID: '',
+    YOUTUBE_API_KEY: ''
 };
+
+// Function to load environment variables from Cloudflare Pages
+function loadCloudflareEnv() {
+    // In Cloudflare Pages, environment variables are available directly on the window object
+    Object.keys(window.__env).forEach(key => {
+        if (window[key]) {
+            window.__env[key] = window[key];
+            console.log(`Loaded ${key} from Cloudflare Pages`);
+        }
+    });
+}
 
 // Function to load external config
 async function loadExternalConfig() {
     try {
+        // First try Cloudflare Pages environment variables
+        loadCloudflareEnv();
+        
+        // If we have all required variables, return
+        if (window.__env.FIREBASE_API_KEY && 
+            window.__env.FIREBASE_AUTH_DOMAIN && 
+            window.__env.FIREBASE_PROJECT_ID) {
+            return;
+        }
+
+        // Fallback to external config file if needed
         const response = await fetch('/config.external.js');
         if (!response.ok) throw new Error('Failed to load external config');
         
