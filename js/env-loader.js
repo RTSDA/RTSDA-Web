@@ -1,36 +1,66 @@
 // Default development configuration
-window.__env = {
-    FIREBASE_API_KEY: '',
-    FIREBASE_AUTH_DOMAIN: '',
-    FIREBASE_PROJECT_ID: '',
-    FIREBASE_STORAGE_BUCKET: '',
-    FIREBASE_MESSAGING_SENDER_ID: '',
-    FIREBASE_APP_ID: '',
-    FIREBASE_MEASUREMENT_ID: '',
-    YOUTUBE_API_KEY: ''
-};
+window.__env = {};
+
+// Function to validate Firebase configuration
+function validateFirebaseConfig() {
+    const requiredVars = [
+        'FIREBASE_API_KEY',
+        'FIREBASE_AUTH_DOMAIN',
+        'FIREBASE_PROJECT_ID',
+        'FIREBASE_STORAGE_BUCKET',
+        'FIREBASE_MESSAGING_SENDER_ID',
+        'FIREBASE_APP_ID'
+    ];
+
+    const missing = requiredVars.filter(key => !window.__env[key] || window.__env[key].trim() === '');
+    if (missing.length > 0) {
+        throw new Error(`Missing required Firebase configuration: ${missing.join(', ')}`);
+    }
+
+    // Validate API key format
+    const apiKey = window.__env.FIREBASE_API_KEY;
+    if (!apiKey.startsWith('AIza')) {
+        throw new Error('Invalid Firebase API key format');
+    }
+}
 
 // Function to load environment variables from Cloudflare Pages
 function loadCloudflareEnv() {
-    // Log all properties on window that might contain our variables
     console.log('Searching for environment variables...');
     
-    // Check for environment variables with different prefixes
     const prefixes = ['', '__STATIC_', 'NEXT_PUBLIC_', 'REACT_APP_', 'VUE_APP_'];
+    const envVars = [
+        'FIREBASE_API_KEY',
+        'FIREBASE_AUTH_DOMAIN',
+        'FIREBASE_PROJECT_ID',
+        'FIREBASE_STORAGE_BUCKET',
+        'FIREBASE_MESSAGING_SENDER_ID',
+        'FIREBASE_APP_ID',
+        'FIREBASE_MEASUREMENT_ID',
+        'YOUTUBE_API_KEY'
+    ];
     
-    Object.keys(window.__env).forEach(key => {
+    envVars.forEach(key => {
         // Try all possible prefixes
-        const value = prefixes.reduce((found, prefix) => {
+        let value = prefixes.reduce((found, prefix) => {
             if (found) return found;
             const fullKey = prefix + key;
-            const val = window[fullKey];
+            
+            // Check for encrypted variable format
+            let val = window[fullKey];
+            if (typeof val === 'string' && val.includes('encrypted')) {
+                console.log(`Found encrypted ${key} with prefix "${prefix}"`);
+                // The actual value should be in window.__env already
+                val = window.__env[key];
+            }
+            
             if (val) {
                 console.log(`Found ${key} with prefix "${prefix}"`);
             }
             return val;
         }, null);
 
-        if (value) {
+        if (value && value.trim() !== '') {
             window.__env[key] = value;
             console.log(`Loaded ${key} (length: ${value.length})`);
             
@@ -40,7 +70,8 @@ function loadCloudflareEnv() {
                     exists: true,
                     length: value.length,
                     startsWithAIza: value.startsWith('AIza'),
-                    containsWhitespace: /\s/.test(value)
+                    containsWhitespace: /\s/.test(value),
+                    isEncrypted: value.includes('encrypted')
                 });
             }
         } else {
@@ -50,9 +81,14 @@ function loadCloudflareEnv() {
 
     // Log final state of window.__env
     console.log('Final environment state:', Object.keys(window.__env).reduce((acc, key) => {
+        const value = window.__env[key];
         acc[key] = {
-            exists: !!window.__env[key],
-            length: window.__env[key]?.length || 0
+            exists: !!value,
+            length: value?.length || 0,
+            value: key === 'FIREBASE_API_KEY' ? 
+                (value?.startsWith('AIza') ? `${value.substring(0, 4)}...` : 'Invalid format') : 
+                '[REDACTED]',
+            isEncrypted: value?.includes('encrypted') || false
         };
         return acc;
     }, {}));
@@ -64,32 +100,31 @@ async function loadExternalConfig() {
         // First try Cloudflare Pages environment variables
         loadCloudflareEnv();
         
-        // If we have all required variables, return
-        if (window.__env.FIREBASE_API_KEY && 
-            window.__env.FIREBASE_AUTH_DOMAIN && 
-            window.__env.FIREBASE_PROJECT_ID) {
-            return;
-        }
+        // Validate Firebase configuration
+        validateFirebaseConfig();
+        return;
+    } catch (error) {
+        console.warn('Failed to load Cloudflare environment variables:', error);
+    }
 
-        // Fallback to external config file if needed
+    try {
+        // Fallback to external config file
         const response = await fetch('/config.external.js');
         if (!response.ok) throw new Error('Failed to load external config');
         
         const text = await response.text();
-        // Safely evaluate the config file
         const configFunc = new Function('window', text);
         const tempWindow = {};
         configFunc(tempWindow);
         
         if (tempWindow.__remoteConfig) {
-            // Map the remote config to our env format
-            if (tempWindow.__remoteConfig.youtube_api_key) {
-                window.__env.YOUTUBE_API_KEY = tempWindow.__remoteConfig.youtube_api_key;
-            }
+            Object.assign(window.__env, tempWindow.__remoteConfig);
+            validateFirebaseConfig();
+            return;
         }
     } catch (error) {
-        console.warn('Failed to load external config:', error);
-        // Continue with default config
+        console.error('Failed to load external config:', error);
+        throw new Error('No valid configuration found');
     }
 }
 
@@ -100,17 +135,19 @@ async function loadEnvFile() {
         if (!response.ok) throw new Error('Failed to load .env file');
         
         const text = await response.text();
-        const env = {};
-        text.split('\n').forEach(line => {
-            const match = line.match(/^([^#\s][^=]+)=(.*)$/);
-            if (match) {
-                env[match[1].trim()] = match[2].trim();
-            }
-        });
-        Object.assign(window.__env, env);
+        const vars = text.split('\n')
+            .filter(line => line && !line.startsWith('#'))
+            .reduce((acc, line) => {
+                const [key, value] = line.split('=').map(s => s.trim());
+                if (key && value) acc[key] = value;
+                return acc;
+            }, {});
+            
+        Object.assign(window.__env, vars);
+        validateFirebaseConfig();
     } catch (error) {
-        console.warn('Error loading .env file:', error);
-        // Continue with existing config
+        console.warn('Failed to load .env file:', error);
+        // Continue with other config sources
     }
 }
 
@@ -118,7 +155,10 @@ async function loadEnvFile() {
 window.__env = window.__env || {};
 
 // Load all configurations
-Promise.all([loadExternalConfig(), loadEnvFile()])
-    .catch(error => {
-        console.error('Error loading configurations:', error);
-    });
+Promise.all([
+    loadExternalConfig(),
+    loadEnvFile()
+]).catch(error => {
+    console.error('Failed to load configuration:', error);
+    throw error;
+});

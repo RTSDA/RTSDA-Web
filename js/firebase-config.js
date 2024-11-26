@@ -44,9 +44,17 @@ async function initializeFirebase() {
         console.log('window.__env.FIREBASE_API_KEY:', typeof window.__env.FIREBASE_API_KEY, window.__env.FIREBASE_API_KEY ? 'exists' : 'undefined');
         console.log('window.__STATIC_FIREBASE_API_KEY:', typeof window.__STATIC_FIREBASE_API_KEY, window.__STATIC_FIREBASE_API_KEY ? 'exists' : 'undefined');
         console.log('API key starts with "AIza":', window.__env.FIREBASE_API_KEY?.startsWith('AIza'));
+        console.log('API key is encrypted:', window.__env.FIREBASE_API_KEY?.includes('encrypted'));
+
+        // Get API key value
+        let apiKey = window.__env.FIREBASE_API_KEY?.trim();
+        if (apiKey?.includes('encrypted')) {
+            console.log('Found encrypted API key, checking window.__env for decrypted value');
+            apiKey = window.__env.FIREBASE_API_KEY;
+        }
 
         const firebaseConfig = {
-            apiKey: window.__env.FIREBASE_API_KEY?.trim(),
+            apiKey: apiKey,
             authDomain: window.__env.FIREBASE_AUTH_DOMAIN?.trim(),
             projectId: window.__env.FIREBASE_PROJECT_ID?.trim(),
             storageBucket: window.__env.FIREBASE_STORAGE_BUCKET?.trim(),
@@ -57,9 +65,20 @@ async function initializeFirebase() {
 
         // Validate API key format
         if (!firebaseConfig.apiKey) {
+            console.error('API key validation failed:', {
+                exists: !!apiKey,
+                length: apiKey?.length || 0,
+                isEncrypted: apiKey?.includes('encrypted') || false,
+                startsWithAIza: apiKey?.startsWith('AIza') || false
+            });
             throw new Error('Firebase API key is missing');
         }
         if (!firebaseConfig.apiKey.startsWith('AIza')) {
+            console.error('Invalid API key format:', {
+                length: firebaseConfig.apiKey.length,
+                isEncrypted: firebaseConfig.apiKey.includes('encrypted'),
+                prefix: firebaseConfig.apiKey.substring(0, 4)
+            });
             throw new Error('Invalid Firebase API key format - should start with "AIza"');
         }
 
@@ -70,7 +89,9 @@ async function initializeFirebase() {
                 exists: !!value,
                 length: value?.length || 0,
                 isEmpty: value === '',
-                isWhitespace: value?.trim() === ''
+                isWhitespace: value?.trim() === '',
+                isEncrypted: value?.includes('encrypted') || false,
+                startsWithAIza: key === 'apiKey' ? value?.startsWith('AIza') : undefined
             });
         });
 
