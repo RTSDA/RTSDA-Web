@@ -36,3 +36,35 @@ The following environment variables are required:
 - Never commit the `.env` file to version control
 - Always use environment variables for sensitive information
 - Keep API keys and credentials secure
+
+## License
+
+This project uses a dual licensing approach:
+
+### Application Source Code
+The website's source code, including HTML, CSS, JavaScript, and other technical implementations, 
+is licensed under the GNU General Public License v3 (GPLv3). See the [LICENSE](LICENSE) file 
+for details.
+
+### Church Content
+The website content (including text, images, media, event information, and other church-specific 
+materials) is copyrighted by the Rockville-Tolland Seventh-day Adventist Church. All rights 
+reserved. These materials are not covered by the GPL license and require proper authorization 
+for use.
+
+### Third-Party Content
+This website may include third-party content (such as Bible texts, denominational materials, 
+and external service integrations) that are subject to their own copyright and usage 
+restrictions.
+
+## Contact
+
+For technical inquiries and contributions:
+- Open an issue or pull request on GitHub
+- Contact the website maintainers
+
+For permissions regarding church content usage:
+Rockville-Tolland Seventh-day Adventist Church
+Administrative Office
+[Church Address]
+[Contact Information]
