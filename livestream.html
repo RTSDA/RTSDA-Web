@@ -240,7 +240,7 @@
         import YouTubeService from './js/youtube-service.js';
         
         async function updateUpcomingStream() {
-            const youtubeService = YouTubeService.getInstance();
+            const youtubeService = new YouTubeService();
             const upcomingContainer = document.getElementById('upcoming-stream');
             try {
                 const upcomingStream = await youtubeService.getUpcomingLivestream();

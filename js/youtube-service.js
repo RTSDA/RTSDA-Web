@@ -1,5 +1,3 @@
-import { getValue, initializeFirebase } from './firebase-config.js';
-import { getRemoteConfig } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 import { getEnvVar } from './env-config.js';
 
 const CHANNEL_ID = 'UCH3GQ7cC1gvTSEbTSg2jW3Q';  // Fixed channel ID
@@ -26,48 +24,31 @@ class YouTubeService {
 
     async initializeService() {
         try {
-            // Initialize Firebase first
-            await initializeFirebase();
-            console.log('Firebase initialized successfully in YouTubeService');
-            
             // Try to load cache from localStorage
-            try {
-                const savedCache = localStorage.getItem('youtubeCache');
-                const savedLastFetch = localStorage.getItem('youtubeLastFetch');
-                
-                if (savedCache && savedLastFetch) {
-                    this.cache = JSON.parse(savedCache);
-                    this.lastFetch = JSON.parse(savedLastFetch);
-                    console.log('Loaded cache from localStorage:', {
-                        cache: this.cache,
-                        lastFetch: this.lastFetch
-                    });
-                } else {
-                    this.cache = {
-                        sermon: null,
-                        livestream: null
-                    };
-                    this.lastFetch = {
-                        sermon: 0,
-                        livestream: 0
-                    };
-                    console.log('Initialized new cache');
-                }
-            } catch (error) {
-                console.warn('Error loading cache from localStorage:', error);
-                this.cache = {
-                    sermon: null,
-                    livestream: null
-                };
-                this.lastFetch = {
-                    sermon: 0,
-                    livestream: 0
-                };
+            const savedCache = localStorage.getItem('youtubeCache');
+            const savedLastFetch = localStorage.getItem('youtubeLastFetch');
+            
+            if (savedCache && savedLastFetch) {
+                this.cache = JSON.parse(savedCache);
+                this.lastFetch = JSON.parse(savedLastFetch);
+            } else {
+                this.resetCache();
             }
         } catch (error) {
-            console.error('Failed to initialize YouTubeService:', error);
-            throw error;
+            console.error('Error initializing YouTubeService:', error);
+            this.resetCache();
         }
+    }
+
+    resetCache() {
+        this.cache = {
+            sermon: null,
+            livestream: null
+        };
+        this.lastFetch = {
+            sermon: 0,
+            livestream: 0
+        };
     }
 
     static getInstance() {
@@ -77,60 +58,103 @@ class YouTubeService {
         return instance;
     }
 
-    isCacheValid(type) {
-        const now = Date.now();
-        const lastFetch = this.lastFetch[type];
-        
-        // If there's no lastFetch timestamp, cache is invalid
-        if (!lastFetch) {
-            console.log(`Cache ${type} invalid: no previous fetch`);
-            return false;
+    async getApiKey() {
+        try {
+            // First try to get from window.__env
+            if (window.__env && window.__env.YOUTUBE_API_KEY) {
+                return window.__env.YOUTUBE_API_KEY;
+            }
+
+            // Then try to get from Firebase if available
+            try {
+                const { getValue, getRemoteConfig } = await import('./firebase-config.js');
+                const remoteConfig = getRemoteConfig();
+                const youtubeApiKey = await getValue(remoteConfig, 'youtube_api_key');
+                if (youtubeApiKey) {
+                    return youtubeApiKey;
+                }
+            } catch (error) {
+                console.log('Firebase not available, skipping Remote Config');
+            }
+
+            // Fallback to environment variable
+            const envApiKey = getEnvVar('YOUTUBE_API_KEY');
+            if (envApiKey) {
+                return envApiKey;
+            }
+
+            throw new Error('YouTube API key not found');
+        } catch (error) {
+            console.error('Error getting YouTube API key:', error);
+            throw error;
         }
-        
-        const ageInMs = now - lastFetch;
-        const ageInSeconds = Math.floor(ageInMs / 1000);
-        const ageInMinutes = Math.floor(ageInSeconds / 60);
-        const ageInHours = Math.floor(ageInMinutes / 60);
-        const ageInDays = Math.floor(ageInHours / 24);
-        
-        let ageString;
-        if (ageInDays > 0) {
-            ageString = `${ageInDays} days`;
-        } else if (ageInHours > 0) {
-            ageString = `${ageInHours} hours`;
-        } else if (ageInMinutes > 0) {
-            ageString = `${ageInMinutes} minutes`;
-        } else {
-            ageString = `${ageInSeconds} seconds`;
-        }
-        
-        const isValid = ageInMs < CACHE_DURATION[type.toUpperCase()];
-        console.log(`Cache ${type} ${isValid ? 'valid' : 'invalid'}: age ${ageString}`);
-        return isValid;
     }
 
-    // Function to convert YouTube duration to minutes
-    getDurationInMinutes(duration) {
-        if (!duration) return 0;
-        
+    async fetchFromYouTube(endpoint, params = {}) {
         try {
-            // YouTube duration format: PT#H#M#S
-            const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-            if (!match) {
-                console.warn('Invalid duration format:', duration);
-                return 0;
+            const apiKey = await this.getApiKey();
+            if (!apiKey) {
+                throw new Error('No YouTube API key available');
             }
-            
-            const hours = parseInt(match[1] || '0', 10);
-            const minutes = parseInt(match[2] || '0', 10);
-            const seconds = parseInt(match[3] || '0', 10);
-            
-            const totalMinutes = (hours * 60) + minutes + (seconds / 60);
-            console.log(`Duration parsed: ${duration} -> ${totalMinutes} minutes`);
-            return totalMinutes;
+
+            const baseUrl = 'https://www.googleapis.com/youtube/v3';
+            const queryParams = new URLSearchParams({
+                ...params,
+                key: apiKey,
+                channelId: CHANNEL_ID
+            });
+
+            const response = await fetch(`${baseUrl}${endpoint}?${queryParams}`);
+            if (!response.ok) {
+                throw new Error(`YouTube API error: ${response.status}`);
+            }
+
+            return await response.json();
         } catch (error) {
-            console.error('Error parsing duration:', duration, error);
-            return 0;
+            console.error('Error fetching from YouTube:', error);
+            throw error;
+        }
+    }
+
+    async getUpcomingLivestream() {
+        try {
+            // Check cache first
+            if (this.cache.livestream && 
+                Date.now() - this.lastFetch.livestream < CACHE_DURATION.LIVESTREAM) {
+                return this.cache.livestream;
+            }
+
+            const data = await this.fetchFromYouTube('/search', {
+                part: 'snippet',
+                eventType: 'upcoming',
+                type: 'video',
+                order: 'date',
+                maxResults: 1
+            });
+
+            if (!data.items || data.items.length === 0) {
+                this.cache.livestream = null;
+                this.lastFetch.livestream = Date.now();
+                this.saveCache();
+                return null;
+            }
+
+            const livestream = {
+                videoId: data.items[0].id.videoId,
+                title: data.items[0].snippet.title,
+                description: data.items[0].snippet.description,
+                scheduledStartTime: data.items[0].snippet.publishedAt
+            };
+
+            this.cache.livestream = livestream;
+            this.lastFetch.livestream = Date.now();
+            this.saveCache();
+
+            return livestream;
+        } catch (error) {
+            console.error('Error getting upcoming livestream:', error);
+            // Return cached data if available, even if expired
+            return this.cache.livestream;
         }
     }
 
@@ -145,7 +169,7 @@ class YouTubeService {
         
         try {
             // Get API key from Remote Config
-            const apiKey = getValue('youtube_api_key');
+            const apiKey = await this.getApiKey();
             
             if (!apiKey) {
                 console.error('YouTube API key not available');
@@ -294,93 +318,69 @@ class YouTubeService {
         }
     }
 
-    async getUpcomingLivestream() {
-        // Check cache first
-        if (this.isCacheValid('livestream') && this.cache.livestream) {
-            console.log('Using cached livestream data');
-            return this.cache.livestream;
+    isCacheValid(type) {
+        const now = Date.now();
+        const lastFetch = this.lastFetch[type];
+        
+        // If there's no lastFetch timestamp, cache is invalid
+        if (!lastFetch) {
+            console.log(`Cache ${type} invalid: no previous fetch`);
+            return false;
         }
+        
+        const ageInMs = now - lastFetch;
+        const ageInSeconds = Math.floor(ageInMs / 1000);
+        const ageInMinutes = Math.floor(ageInSeconds / 60);
+        const ageInHours = Math.floor(ageInMinutes / 60);
+        const ageInDays = Math.floor(ageInHours / 24);
+        
+        let ageString;
+        if (ageInDays > 0) {
+            ageString = `${ageInDays} days`;
+        } else if (ageInHours > 0) {
+            ageString = `${ageInHours} hours`;
+        } else if (ageInMinutes > 0) {
+            ageString = `${ageInMinutes} minutes`;
+        } else {
+            ageString = `${ageInSeconds} seconds`;
+        }
+        
+        const isValid = ageInMs < CACHE_DURATION[type.toUpperCase()];
+        console.log(`Cache ${type} ${isValid ? 'valid' : 'invalid'}: age ${ageString}`);
+        return isValid;
+    }
 
+    // Function to convert YouTube duration to minutes
+    getDurationInMinutes(duration) {
+        if (!duration) return 0;
+        
         try {
-            // Get API key from Remote Config
-            const apiKey = getValue('youtube_api_key');
-            
-            if (!apiKey) {
-                console.error('YouTube API key not available');
-                return {
-                    title: 'Upcoming Livestream',
-                    description: 'Unable to fetch livestream at this time.',
-                    videoId: null,
-                    error: 'API key not available'
-                };
+            // YouTube duration format: PT#H#M#S
+            const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+            if (!match) {
+                console.warn('Invalid duration format:', duration);
+                return 0;
             }
-
-            console.log('Using YouTube API key:', apiKey.substring(0, 8) + '...');
-            const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&eventType=upcoming&type=video&key=${apiKey}&order=date`;
-            console.log('Fetching from URL:', searchUrl);
             
-            const response = await fetch(searchUrl);
-            console.log('Response status:', response.status);
+            const hours = parseInt(match[1] || '0', 10);
+            const minutes = parseInt(match[2] || '0', 10);
+            const seconds = parseInt(match[3] || '0', 10);
             
-            if (!response.ok) {
-                const error = await response.json();
-                console.error('YouTube API error:', error);
-                return {
-                    title: 'Upcoming Livestream',
-                    description: 'Unable to fetch livestream at this time.',
-                    videoId: null,
-                    error: error.error ? error.error.message : 'Unknown error'
-                };
-            }
-
-            const data = await response.json();
-            console.log('YouTube API response:', data);
-
-            if (!data.items || data.items.length === 0) {
-                console.log('No upcoming livestreams found');
-                return {
-                    title: 'Upcoming Livestream',
-                    description: 'No upcoming livestreams scheduled.',
-                    videoId: null,
-                    error: 'No livestreams found'
-                };
-            }
-
-            const livestream = data.items[0];
-            console.log('Upcoming livestream:', livestream);
-
-            const livestreamData = {
-                title: livestream.snippet.title || 'Upcoming Livestream',
-                description: livestream.snippet.description || '',
-                videoId: livestream.id.videoId,
-                thumbnail: livestream.snippet.thumbnails?.high?.url || livestream.snippet.thumbnails?.default?.url
-            };
-
-            // Update cache
-            this.cache.livestream = livestreamData;
-            this.lastFetch.livestream = Date.now();
-            this.saveCache();
-
-            return livestreamData;
+            const totalMinutes = (hours * 60) + minutes + (seconds / 60);
+            console.log(`Duration parsed: ${duration} -> ${totalMinutes} minutes`);
+            return totalMinutes;
         } catch (error) {
-            console.error('Error fetching upcoming livestream:', error);
-            return {
-                title: 'Upcoming Livestream',
-                description: 'Unable to fetch livestream at this time.',
-                videoId: null,
-                error: error.message
-            };
+            console.error('Error parsing duration:', duration, error);
+            return 0;
         }
     }
 
-    // Helper method to save cache to localStorage
     saveCache() {
         try {
             localStorage.setItem('youtubeCache', JSON.stringify(this.cache));
             localStorage.setItem('youtubeLastFetch', JSON.stringify(this.lastFetch));
-            console.log('Saved cache to localStorage');
         } catch (error) {
-            console.warn('Error saving cache to localStorage:', error);
+            console.error('Error saving cache:', error);
         }
     }
 }
