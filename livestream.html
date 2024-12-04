@@ -19,10 +19,6 @@
     <link rel="stylesheet" href="css/vendor.css">
     <link rel="stylesheet" href="css/main.css">
 
-    <!-- script
-    ================================================== -->
-    <script src="js/modernizr.js"></script>
-
     <!-- favicons
     ================================================== -->
     <link rel="apple-touch-icon" sizes="180x180" href="sdalogo.webp">
@@ -105,10 +101,6 @@
                             <li>Divine Service: 11:00 AM EST</li>
                         </ul>
                     </div>
-                </div>
-
-                <div id="upcoming-stream" class="text-center">
-                    <!-- Upcoming stream info will be inserted here -->
                 </div>
                 
                 <div id="current-stream" class="video-container">
@@ -245,22 +237,25 @@
             try {
                 const upcomingStream = await youtubeService.getUpcomingLivestream();
                 if (upcomingStream) {
-                    const startTime = new Date(upcomingStream.scheduledStartTime);
+                    const timeInfo = upcomingStream.isLive 
+                        ? '<p class="live-now"> Live Now</p>'
+                        : `<p>Starting ${new Date(upcomingStream.scheduledStartTime).toLocaleString()}</p>`;
+                        
                     upcomingContainer.innerHTML = `
                         <div class="upcoming-stream-info">
-                            <h3>Next Live Service</h3>
+                            <h3>${upcomingStream.isLive ? 'Live Service in Progress' : 'Next Live Service'}</h3>
                             <p>${upcomingStream.title}</p>
-                            <p>Starting ${startTime.toLocaleString()}</p>
+                            ${timeInfo}
                             <a href="https://www.youtube.com/watch?v=${upcomingStream.videoId}" 
                                target="_blank" 
-                               class="btn btn--primary">Set Reminder</a>
+                               class="btn btn--primary">${upcomingStream.isLive ? 'Watch Now' : 'Set Reminder'}</a>
                         </div>
                     `;
                 } else {
                     upcomingContainer.innerHTML = `
                         <div class="upcoming-stream-info">
                             <p>No upcoming live streams scheduled at this time.</p>
-                            <p>Please check back later or subscribe to our YouTube channel for updates.</p>
+                            <p>Please check back later or subscribe to our <a href="https://www.youtube.com/@rockville-tollandsdachurch" target="_blank">YouTube channel</a> for updates.</p>
                         </div>
                     `;
                 }
@@ -281,5 +276,19 @@
         // Refresh upcoming stream info every 5 minutes
         setInterval(updateUpcomingStream, 5 * 60 * 1000);
     </script>
+
+    <style>
+        .live-now {
+            color: #ff0000;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
 
 </body>
