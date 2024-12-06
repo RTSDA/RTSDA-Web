@@ -2,7 +2,6 @@ import { getEnvVar } from './env-config.js';
 import { getValue } from './firebase-config.js';
 
 const CHANNEL_ID = 'UCH3GQ7cC1gvTSEbTSg2jW3Q';  // Fixed channel ID
-const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 // Cache configuration
 const CACHE_DURATION = {
@@ -61,26 +60,15 @@ class YouTubeService {
 
     async getApiKey() {
         try {
-            console.log('Getting YouTube API key...');
-            
-            // First try to get from window.__env
-            if (window.__env && window.__env.YOUTUBE_API_KEY) {
-                console.log('Using YouTube API key from window.__env');
-                return window.__env.YOUTUBE_API_KEY;
-            }
-
-            // Then try to get from Firebase Remote Config
-            console.log('Attempting to get YouTube API key from Remote Config...');
+            // Try Remote Config first
             const youtubeApiKey = getValue('youtube_api_key');
             if (youtubeApiKey) {
-                console.log('Using YouTube API key from Remote Config');
                 return youtubeApiKey;
             }
 
             // Fallback to environment variable
             const envApiKey = getEnvVar('YOUTUBE_API_KEY');
             if (envApiKey) {
-                console.log('Using YouTube API key from environment variable');
                 return envApiKey;
             }
 

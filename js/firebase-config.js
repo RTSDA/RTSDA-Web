@@ -24,10 +24,7 @@ function getFirebaseConfig() {
     // Required Firebase configuration fields
     const requiredFields = [
         'FIREBASE_API_KEY',
-        'FIREBASE_AUTH_DOMAIN',
         'FIREBASE_PROJECT_ID',
-        'FIREBASE_STORAGE_BUCKET',
-        'FIREBASE_MESSAGING_SENDER_ID',
         'FIREBASE_APP_ID'
     ];
 
@@ -40,12 +37,8 @@ function getFirebaseConfig() {
     // Return Firebase configuration object
     return {
         apiKey: env.FIREBASE_API_KEY,
-        authDomain: env.FIREBASE_AUTH_DOMAIN,
         projectId: env.FIREBASE_PROJECT_ID,
-        storageBucket: env.FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID,
         appId: env.FIREBASE_APP_ID,
-        measurementId: env.FIREBASE_MEASUREMENT_ID || undefined
     };
 }
 
@@ -72,17 +65,9 @@ async function initializeFirebase() {
 
         try {
             remoteConfig = getRemoteConfig(app);
-            
-            // Set up Remote Config settings
-            const settings = {
-                minimumFetchIntervalMillis: 0,  // Always fetch fresh values
-                fetchTimeoutMillis: 10000  // 10 second timeout
-            };
-            remoteConfig.settings = settings;
-            
-            // Set default values for Remote Config
-            remoteConfig.defaultConfig = {
-                youtube_api_key: ''  // Default empty value
+            remoteConfig.settings = {
+                minimumFetchIntervalMillis: 0,
+                fetchTimeoutMillis: 10000
             };
             
             await fetchAndActivate(remoteConfig);
@@ -92,21 +77,10 @@ async function initializeFirebase() {
             try {
                 const youtubeApiKey = getRemoteConfigValue(remoteConfig, 'youtube_api_key');
                 if (youtubeApiKey) {
-                    const apiKeyString = youtubeApiKey.asString();
-                    console.log('YouTube API key status:', {
-                        exists: true,
-                        type: typeof apiKeyString,
-                        length: apiKeyString.length
-                    });
-                    
-                    // Store in cache
-                    cachedConfig['youtube_api_key'] = apiKeyString;
-                    console.log('Successfully cached YouTube API key');
-                } else {
-                    console.warn('No YouTube API key found in Remote Config');
+                    cachedConfig['youtube_api_key'] = youtubeApiKey.asString();
                 }
-            } catch (apiKeyError) {
-                console.error('Error caching YouTube API key:', apiKeyError);
+            } catch (error) {
+                console.error('Error caching YouTube API key:', error);
             }
         } catch (configError) {
             console.error('Error with Remote Config:', configError);
@@ -135,47 +109,22 @@ async function initializeFirebase() {
 
 // Helper function to get config values
 function getValue(key) {
-    if (typeof key !== 'string') {
-        console.error('Invalid key type:', typeof key);
-        return null;
+    // Try cache first
+    if (cachedConfig[key]) {
+        return cachedConfig[key];
     }
     
-    if (!configInitialized) {
-        console.warn('Firebase not initialized when getting value for:', key);
-        return null;
-    }
-
-    // Try to get from cache first
-    const cachedValue = cachedConfig[key];
-    if (cachedValue) {
-        console.log(`Found cached value for ${key}:`, {
-            exists: true,
-            type: typeof cachedValue,
-            length: cachedValue.length,
-            preview: cachedValue.substring(0, 5) + '...'
-        });
-        return cachedValue;
-    }
-
     // Then try Remote Config
     if (remoteConfig && remoteConfigInitialized) {
         try {
             const value = getRemoteConfigValue(remoteConfig, key);
             if (value) {
                 const stringValue = value.asString();
-                console.log(`Successfully retrieved ${key} from Remote Config:`, {
-                    exists: true,
-                    length: stringValue.length,
-                    type: typeof stringValue,
-                    preview: stringValue.substring(0, 5) + '...'
-                });
-                
-                // Cache the value
                 cachedConfig[key] = stringValue;
                 return stringValue;
             }
         } catch (error) {
-            console.warn(`Error getting ${key} from Remote Config:`, error);
+            console.error('Error getting value from Remote Config:', error);
         }
     }
     
