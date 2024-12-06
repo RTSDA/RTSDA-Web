@@ -8,15 +8,9 @@ export const envReady = new Promise((resolve, reject) => {
     rejectEnvReady = reject;
 });
 
-// Get an environment variable, checking both prefixed and unprefixed versions
+// Get an environment variable
 export function getEnvVar(key) {
-    // Try unprefixed first
-    if (window.__env[key]) {
-        return window.__env[key];
-    }
-    // Then try with _CLOUDFLARE_ prefix
-    const prefixedKey = `_CLOUDFLARE_${key}`;
-    return window.__env[prefixedKey] || null;
+    return window.__env[key] || null;
 }
 
 // Fetch environment variables from Cloudflare Function
@@ -35,9 +29,12 @@ async function fetchEnvironmentVariables() {
         if (Object.keys(envVars).length === 0) {
             throw new Error('No environment variables returned from /env');
         }
-        
-        // Update window.__env with fetched variables
-        Object.assign(window.__env, envVars);
+
+        // Set environment variables
+        window.__env = {
+            ...window.__env,
+            ...envVars
+        };
         
         // Verify that all required variables are set
         const requiredVars = [
@@ -55,6 +52,7 @@ async function fetchEnvironmentVariables() {
         }
         
         // Only resolve if all required variables are present
+        console.log('Environment variables successfully loaded and verified');
         resolveEnvReady(window.__env);
     } catch (error) {
         console.error('Error fetching environment variables:', error);
