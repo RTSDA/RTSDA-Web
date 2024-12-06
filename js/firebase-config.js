@@ -15,32 +15,6 @@ let remoteConfigInitialized = false;
 
 // Get Firebase configuration from environment variables
 function getFirebaseConfig() {
-    console.log('Getting Firebase config...');
-    const requiredKeys = [
-        'FIREBASE_API_KEY',
-        'FIREBASE_AUTH_DOMAIN',
-        'FIREBASE_PROJECT_ID',
-        'FIREBASE_STORAGE_BUCKET',
-        'FIREBASE_MESSAGING_SENDER_ID',
-        'FIREBASE_APP_ID'
-    ];
-
-    // Log all available environment variables (excluding sensitive values)
-    console.log('Available environment variables:', Object.keys(window.__env).join(', '));
-
-    const missingKeys = requiredKeys.filter(key => {
-        const value = getEnvVar(key);
-        const exists = !!value;
-        console.log(`Checking ${key}: ${exists ? 'Found' : 'Missing'}`);
-        return !exists;
-    });
-
-    if (missingKeys.length > 0) {
-        const error = new Error(`Missing required Firebase configuration: ${missingKeys.join(', ')}`);
-        console.error(error);
-        throw error;
-    }
-
     const config = {
         apiKey: getEnvVar('FIREBASE_API_KEY'),
         authDomain: getEnvVar('FIREBASE_AUTH_DOMAIN'),
@@ -51,60 +25,60 @@ function getFirebaseConfig() {
         measurementId: getEnvVar('FIREBASE_MEASUREMENT_ID')
     };
 
-    console.log('Firebase config loaded successfully');
+    // Check if we have the required config
+    const missingKeys = Object.entries(config)
+        .filter(([key, value]) => key !== 'measurementId' && !value)
+        .map(([key]) => key);
+
+    if (missingKeys.length > 0) {
+        throw new Error(`Missing required Firebase configuration: ${missingKeys.join(', ')}`);
+    }
+
     return config;
 }
 
 // Initialize Firebase and all services
 export async function initializeFirebase() {
     try {
-        console.log('Starting Firebase initialization...');
-        
-        console.log('Waiting for environment variables to be ready...');
+        // If already initialized, return the app
+        if (app) {
+            return app;
+        }
+
+        // Wait for environment variables
         await envReady;
-        console.log('Environment variables are ready');
         
         // Get Firebase config
         const firebaseConfig = getFirebaseConfig();
-        console.log('Firebase config loaded with values:', 
-            Object.keys(firebaseConfig).map(key => `${key}: ${key === 'apiKey' ? '[REDACTED]' : !!firebaseConfig[key]}`).join(', '));
         
-        // Initialize Firebase app if not already initialized
-        if (!app) {
-            app = initializeApp(firebaseConfig);
-            console.log('Firebase app initialized');
-            
-            // Initialize Firestore
-            db = getFirestore(app);
-            console.log('Firestore initialized');
-            
-            // Initialize Auth
-            auth = getAuth(app);
-            console.log('Auth initialized');
-            
-            // Initialize Analytics
-            if (firebaseConfig.measurementId) {
-                const analytics = getAnalytics(app);
-                console.log('Analytics initialized');
-            }
-            
-            // Initialize Remote Config
-            remoteConfig = getRemoteConfig(app);
-            remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
-            remoteConfig.settings.fetchTimeoutMillis = 60000; // 1 minute
-            
-            try {
-                await fetchAndActivate(remoteConfig);
-                remoteConfigInitialized = true;
-                console.log('Remote config initialized');
-            } catch (error) {
-                console.error('Error initializing remote config:', error);
-                // Don't throw here, as we can still proceed without remote config
-            }
-            
-            configInitialized = true;
+        // Initialize Firebase app
+        app = initializeApp(firebaseConfig);
+        
+        // Initialize Firestore
+        db = getFirestore(app);
+        
+        // Initialize Auth
+        auth = getAuth(app);
+        
+        // Initialize Analytics if we have measurementId
+        if (firebaseConfig.measurementId) {
+            const analytics = getAnalytics(app);
         }
         
+        // Initialize Remote Config
+        remoteConfig = getRemoteConfig(app);
+        remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
+        remoteConfig.settings.fetchTimeoutMillis = 60000; // 1 minute
+        
+        try {
+            await fetchAndActivate(remoteConfig);
+            remoteConfigInitialized = true;
+        } catch (error) {
+            console.error('Error initializing remote config:', error);
+            // Don't throw here, as we can still proceed without remote config
+        }
+        
+        configInitialized = true;
         return app;
     } catch (error) {
         console.error('Error initializing Firebase:', error);
@@ -120,15 +94,8 @@ export function getValue(key) {
     }
     
     try {
-        console.log(`Getting Remote Config value for ${key}...`);
         const value = getRemoteConfigValue(remoteConfig, key);
-        if (!value) {
-            console.warn(`No value found for ${key} in Remote Config`);
-            return null;
-        }
-        const stringValue = value.asString();
-        console.log(`Got Remote Config value for ${key}: ${key === 'YOUTUBE_API_KEY' ? '[REDACTED]' : stringValue}`);
-        return stringValue;
+        return value ? value.asString() : null;
     } catch (error) {
         console.error('Error getting remote config value:', error);
         return null;

@@ -26,6 +26,13 @@ async function fetchEnvironmentVariables() {
         const envVars = await response.json();
         console.log('Successfully fetched environment variables. Available keys:', Object.keys(envVars).join(', '));
         
+        // Log the actual values for debugging
+        console.log('Raw environment variable values:', envVars);
+        
+        console.log('Environment variable values:', Object.fromEntries(
+            Object.entries(envVars).map(([key, value]) => [key, value ? '[SET]' : '[EMPTY]'])
+        ));
+        
         if (Object.keys(envVars).length === 0) {
             throw new Error('No environment variables returned from /env');
         }
@@ -35,6 +42,9 @@ async function fetchEnvironmentVariables() {
             ...window.__env,
             ...envVars
         };
+        
+        // Log the window.__env values
+        console.log('window.__env values:', window.__env);
         
         // Verify that all required variables are set
         const requiredVars = [

@@ -12,9 +12,15 @@ export async function onRequest(context) {
 
   // Create a filtered object with only allowed variables
   const filteredEnv = {};
+  
+  // Check both context.env and process.env
+  const envSource = context.env || process.env;
+  
   for (const key of allowedVars) {
-    if (context.env[key]) {
-      filteredEnv[key] = context.env[key];
+    // Try both with and without CLOUDFLARE_ prefix
+    const value = envSource[key] || envSource[`CLOUDFLARE_${key}`];
+    if (value) {
+      filteredEnv[key] = value;
     }
   }
 
