@@ -1,5 +1,6 @@
 // Import Firebase modules
-import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
+import { getRemoteConfig } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
+import { getValue as getFirebaseValue } from './firebase-config.js';
 
 class ConfigService {
     constructor() {
@@ -13,33 +14,27 @@ class ConfigService {
             prayer_request_enabled: true,
             livestream_enabled: true
         };
-        
-        // Set fetch timeout and minimum fetch interval
-        this.remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
-        this.remoteConfig.settings.fetchTimeoutMillis = 60000; // 1 minute
     }
 
     async initialize() {
-        try {
-            const activated = await fetchAndActivate(this.remoteConfig);
-            console.log('Remote config fetched and activated:', activated);
-            return activated;
-        } catch (error) {
-            console.error('Error fetching remote config:', error);
-            return false;
-        }
+        // No need to initialize here as it's handled in firebase-config.js
+        return true;
     }
 
     getString(key) {
-        return getValue(this.remoteConfig, key).asString();
+        return getFirebaseValue(key) || this.remoteConfig.defaultConfig[key];
     }
 
     getBoolean(key) {
-        return getValue(this.remoteConfig, key).asBoolean();
+        const value = getFirebaseValue(key);
+        if (value === null) return this.remoteConfig.defaultConfig[key];
+        return value.toLowerCase() === 'true';
     }
 
     getNumber(key) {
-        return getValue(this.remoteConfig, key).asNumber();
+        const value = getFirebaseValue(key);
+        if (value === null) return this.remoteConfig.defaultConfig[key];
+        return Number(value);
     }
 
     // Helper methods for specific configurations
@@ -55,16 +50,16 @@ class ConfigService {
         return this.getBoolean('website_enabled');
     }
 
+    getContactEmail() {
+        return this.getString('contact_email');
+    }
+
     isPrayerRequestEnabled() {
         return this.getBoolean('prayer_request_enabled');
     }
 
     isLivestreamEnabled() {
         return this.getBoolean('livestream_enabled');
-    }
-
-    getContactEmail() {
-        return this.getString('contact_email');
     }
 }
 

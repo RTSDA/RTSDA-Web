@@ -373,14 +373,8 @@
             await window.__envReady;
             console.log('Environment variables ready');
             
-            // Initialize Firebase first
-            const { initializeFirebase } = await import('./js/firebase-config.js?v=5');
+            // Import YouTubeService
             const YouTubeService = (await import('./js/youtube-service.js?v=5')).default;
-            
-            // Initialize Firebase and wait for it
-            console.log('Initializing Firebase...');
-            await initializeFirebase();
-            console.log('Firebase initialized');
             
             // Create YouTube service and wait for initialization
             console.log('Creating YouTube service...');

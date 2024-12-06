@@ -39,7 +39,22 @@ async function fetchEnvironmentVariables() {
         // Update window.__env with fetched variables
         Object.assign(window.__env, envVars);
         
-        // Resolve the envReady promise
+        // Verify that all required variables are set
+        const requiredVars = [
+            'FIREBASE_API_KEY',
+            'FIREBASE_AUTH_DOMAIN',
+            'FIREBASE_PROJECT_ID',
+            'FIREBASE_STORAGE_BUCKET',
+            'FIREBASE_MESSAGING_SENDER_ID',
+            'FIREBASE_APP_ID'
+        ];
+        
+        const missingVars = requiredVars.filter(key => !window.__env[key]);
+        if (missingVars.length > 0) {
+            throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+        }
+        
+        // Only resolve if all required variables are present
         resolveEnvReady(window.__env);
     } catch (error) {
         console.error('Error fetching environment variables:', error);

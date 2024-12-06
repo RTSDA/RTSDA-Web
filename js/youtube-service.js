@@ -1,4 +1,6 @@
-import { getValue } from './firebase-config.js';
+import { getValue, initializeFirebase } from './firebase-config.js';
+import { envReady } from './env-config.js';
+import { getRemoteConfig, fetchAndActivate } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 
 const CHANNEL_ID = 'UCH3GQ7cC1gvTSEbTSg2jW3Q';  // Fixed channel ID
 
@@ -23,6 +25,29 @@ class YouTubeService {
 
     async initializeService() {
         try {
+            // Wait for environment variables first
+            console.log('YouTubeService: Waiting for environment variables...');
+            await envReady;
+            console.log('YouTubeService: Environment variables loaded');
+
+            // Initialize Firebase
+            console.log('YouTubeService: Initializing Firebase...');
+            const app = await initializeFirebase();
+            console.log('YouTubeService: Firebase initialized');
+
+            // Initialize Remote Config
+            console.log('YouTubeService: Initializing Remote Config...');
+            this.remoteConfig = getRemoteConfig(app);
+            this.remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
+            this.remoteConfig.settings.fetchTimeoutMillis = 60000; // 1 minute
+            
+            try {
+                await fetchAndActivate(this.remoteConfig);
+                console.log('YouTubeService: Remote Config initialized');
+            } catch (error) {
+                console.error('YouTubeService: Error initializing Remote Config:', error);
+            }
+
             // Try to load cache from localStorage
             const savedCache = localStorage.getItem('youtubeCache');
             const savedLastFetch = localStorage.getItem('youtubeLastFetch');
@@ -36,6 +61,7 @@ class YouTubeService {
         } catch (error) {
             console.error('Error initializing YouTubeService:', error);
             this.resetCache();
+            throw error;
         }
     }
 
@@ -60,15 +86,20 @@ class YouTubeService {
     async getApiKey() {
         try {
             console.log('Getting YouTube API key from Remote Config...');
-            const youtubeApiKey = await getValue('youtube_api_key');
+            if (!this.remoteConfig) {
+                console.error('Remote Config not initialized');
+                return null;
+            }
+            
+            const youtubeApiKey = getValue('YOUTUBE_API_KEY');
             if (!youtubeApiKey) {
                 console.error('YouTube API key not found in Remote Config');
                 return null;
             }
-            console.log('Successfully got YouTube API key from Remote Config');
+            console.log('Successfully got YouTube API key');
             return youtubeApiKey;
         } catch (error) {
-            console.error('Error getting YouTube API key from Remote Config:', error);
+            console.error('Error getting YouTube API key:', error);
             return null;
         }
     }
@@ -183,7 +214,7 @@ class YouTubeService {
         console.log('Fetching latest sermon...');
         
         try {
-            // Get API key from Remote Config
+            // Get API key from environment
             console.log('Getting YouTube API key...');
             const apiKey = await this.getApiKey();
             console.log('API key available:', !!apiKey);
