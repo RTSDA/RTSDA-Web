@@ -1,6 +1,5 @@
 import { initializeFirebase, db } from './firebase-config.js';
 import { collection, query, orderBy, getDocs, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { envReady } from './env-config.js';
 
 // Helper function to format recurrence type
 function formatRecurrenceType(type) {
@@ -92,11 +91,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     try {
         // Wait for environment variables first
         console.log('index-events.js: Waiting for environment variables...');
-        await envReady;
+        await window.__envReady;
         console.log('index-events.js: Environment variables loaded');
         
         // Initialize Firebase
+        console.log('index-events.js: Initializing Firebase...');
         await initializeFirebase();
+        console.log('index-events.js: Firebase initialized');
         
         if (!db) {
             throw new Error('Firebase database not initialized');

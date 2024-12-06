@@ -1,4 +1,14 @@
 export async function onRequest(context) {
+  // If this is a request for env-loader.js, return a redirect response
+  if (context.request.url.includes('env-loader.js')) {
+    return new Response(null, {
+      status: 301,
+      headers: {
+        'Location': context.request.url.replace('env-loader.js', 'env-config.js')
+      }
+    });
+  }
+
   // List of environment variables to expose
   const allowedVars = [
     'FIREBASE_API_KEY',
