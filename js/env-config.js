@@ -28,8 +28,8 @@ if (!window.__envInitialized) {
     // Fetch environment variables from Cloudflare Function
     async function fetchEnvironmentVariables() {
         try {
-            console.log('env-config.js: Fetching environment variables from /env...');
-            const response = await fetch('/env');
+            console.log('env-config.js: Fetching environment variables from /functions/env...');
+            const response = await fetch('/functions/env');
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -42,7 +42,7 @@ if (!window.__envInitialized) {
             console.log('env-config.js: Raw environment variable values:', envVars);
             
             if (Object.keys(envVars).length === 0) {
-                throw new Error('No environment variables returned from /env');
+                throw new Error('No environment variables returned from /functions/env');
             }
 
             // Set environment variables
@@ -50,33 +50,25 @@ if (!window.__envInitialized) {
                 ...window.__env,
                 ...envVars
             };
-            
-            // Log the window.__env values
-            console.log('env-config.js: window.__env values:', Object.fromEntries(
-                Object.entries(window.__env).map(([key, value]) => [key, value ? '[SET]' : '[EMPTY]'])
-            ));
-            
-            // Verify that all required variables are set
-            const requiredVars = [
-                'FIREBASE_API_KEY',
-                'FIREBASE_AUTH_DOMAIN',
-                'FIREBASE_PROJECT_ID',
-                'FIREBASE_STORAGE_BUCKET',
-                'FIREBASE_MESSAGING_SENDER_ID',
-                'FIREBASE_APP_ID'
-            ];
-            
-            const missingVars = requiredVars.filter(key => !window.__env[key]);
-            if (missingVars.length > 0) {
-                throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
-            }
-            
-            // Only resolve if all required variables are present
-            console.log('env-config.js: Environment variables successfully loaded and verified');
-            resolveEnvReady(window.__env);
+
+            // Log the current state of window.__env
+            console.log('env-config.js: window.__env values:', {
+                ...window.__env,
+                // Redact sensitive values
+                FIREBASE_API_KEY: window.__env.FIREBASE_API_KEY ? '[SET]' : '[NOT SET]',
+                FIREBASE_AUTH_DOMAIN: window.__env.FIREBASE_AUTH_DOMAIN ? '[SET]' : '[NOT SET]',
+                FIREBASE_PROJECT_ID: window.__env.FIREBASE_PROJECT_ID ? '[SET]' : '[NOT SET]',
+                FIREBASE_STORAGE_BUCKET: window.__env.FIREBASE_STORAGE_BUCKET ? '[SET]' : '[NOT SET]',
+                FIREBASE_MESSAGING_SENDER_ID: window.__env.FIREBASE_MESSAGING_SENDER_ID ? '[SET]' : '[NOT SET]',
+                FIREBASE_APP_ID: window.__env.FIREBASE_APP_ID ? '[SET]' : '[NOT SET]',
+                FIREBASE_MEASUREMENT_ID: window.__env.FIREBASE_MEASUREMENT_ID ? '[SET]' : '[NOT SET]'
+            });
+
+            // Resolve the ready promise
+            resolveEnvReady();
         } catch (error) {
             console.error('env-config.js: Error fetching environment variables:', error);
-            console.log('env-config.js: Current environment:', Object.keys(window.__env || {}).join(', '));
+            console.log('env-config.js: Current environment:', window.__env);
             rejectEnvReady(error);
         }
     }
@@ -85,6 +77,6 @@ if (!window.__envInitialized) {
     console.log('env-config.js: Starting environment variable fetch...');
     fetchEnvironmentVariables();
 } else {
-    console.log('env-config.js: Environment already initialized, skipping...');
+    console.log('env-config.js: Environment already initialized');
     export const envReady = window.__envReady;
 }

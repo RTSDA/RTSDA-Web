@@ -2,101 +2,38 @@
 <html class="no-js" lang="en">
 <head>
     <!--- basic page needs
-    ================================================== -->
+    ==================================================-->
     <meta charset="utf-8">
     <title>Admin Panel - Rockville-Tolland SDA Church</title>
     <meta name="description" content="">
     <meta name="author" content="">
 
     <!-- mobile specific metas
-    ================================================== -->
+    ==================================================-->
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- CSS
-    ================================================== -->
+    ==================================================-->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/main.css">
 
-    <!-- script
-    ================================================== -->
-    <script src="js/modernizr.js"></script>
-    
-    <!-- Environment Configuration
-    ================================================== -->
-    <script type="module" src="js/env-config.js?v=2"></script>
-
-    <!-- Firebase Scripts
-    ================================================== -->
-    <script type="module" src="js/firebase-config.js"></script>
-    <script type="module" src="js/admin.js"></script>
-    <script type="module" src="js/admin-prayer.js"></script>
-
-    <style>
-        .prayer-request-card {
-            background: #fff;
-            border-radius: 4px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .prayer-request-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .prayer-date {
-            color: #666;
-            font-size: 0.9em;
-        }
-        .prayer-request-content {
-            margin-bottom: 15px;
-        }
-        .contact-info {
-            padding: 10px;
-            background: #f5f5f5;
-            border-radius: 4px;
-            margin-top: 10px;
-        }
-        .prayer-request-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .status-select {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-        }
-        .btn--delete {
-            background: #dc3545;
-            color: white;
-        }
-        .admin-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .admin-tab {
-            padding: 10px 20px;
-            border: none;
-            background: #f0f0f0;
-            cursor: pointer;
-        }
-        .admin-tab.active {
-            background: #333;
-            color: white;
-        }
-    </style>
-
     <!-- favicons
-    ================================================== -->
+    ==================================================-->
     <link rel="apple-touch-icon" sizes="180x180" href="sdalogo.webp">
     <link rel="icon" type="image/png" sizes="32x32" href="sdalogo.webp">
     <link rel="icon" type="image/png" sizes="16x16" href="sdalogo.webp">
     <link rel="manifest" href="site.webmanifest">
-</head>
 
+    <!-- Environment Configuration
+    ==================================================-->
+    <script type="module" src="js/env-config.js?v=2"></script>
+
+    <!-- scripts
+    ==================================================-->
+    <script src="js/modernizr.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/config-service.js"></script>
+    <script type="module" src="js/shared-config.js"></script>
 <body id="top">
     <!-- header (same as other pages) -->
     <header class="s-header">

@@ -1,122 +1,39 @@
 <!DOCTYPE html>
 <html class="no-js" lang="en">
 <head>
+    <!--- basic page needs
+    ==================================================-->
     <meta charset="utf-8">
     <title>Event Details - Rockville-Tolland SDA Church</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- mobile specific metas
+    ==================================================-->
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- CSS
+    ==================================================-->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/main.css">
-    
-    <!-- Import Firebase using modules -->
-    <script type="module">
-        import { db } from './js/firebase-config.js';
-        import { doc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // Helper function to format recurrence type
-        function formatRecurrenceType(type) {
-            if (!type || type === 'NONE') return '';
-            return type.split('_')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                .join(' ');
-        }
+    <!-- favicons
+    ==================================================-->
+    <link rel="apple-touch-icon" sizes="180x180" href="sdalogo.webp">
+    <link rel="icon" type="image/png" sizes="32x32" href="sdalogo.webp">
+    <link rel="icon" type="image/png" sizes="16x16" href="sdalogo.webp">
+    <link rel="manifest" href="site.webmanifest">
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            const eventContainer = document.getElementById('event-container');
-            const urlParams = new URLSearchParams(window.location.search);
-            const eventId = urlParams.get('id');
-            
-            if (!eventId) {
-                window.location.href = '/events';
-                return;
-            }
-            
-            try {
-                const docRef = doc(db, 'events', eventId);
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists()) {
-                    const event = { id: docSnap.id, ...docSnap.data() };
-                    console.log('Event data:', event); // Debug log
-                    
-                    // Handle all possible date formats
-                    let startDate;
-                    if (event.startDate instanceof Timestamp) {
-                        startDate = event.startDate.toDate();
-                    } else if (typeof event.startDate === 'number') {
-                        startDate = new Date(event.startDate * 1000);
-                    } else if (event.startDate?.seconds) {
-                        startDate = new Date(event.startDate.seconds * 1000);
-                    } else if (event.startDate) {
-                        startDate = new Date(event.startDate);
-                    } else {
-                        console.error('Invalid or missing startDate:', event.startDate);
-                        throw new Error('Invalid event date');
-                    }
-                    
-                    const recurrenceText = formatRecurrenceType(event.recurrenceType);
-                    
-                    eventContainer.innerHTML = `
-                        <div class="row">
-                            <div class="column large-12">
-                                <h1 class="display-1">${event.title}</h1>
-                                
-                                <div class="event-details">
-                                    <p class="event-description">${event.description || 'No description available.'}</p>
-                                    
-                                    <ul class="events-list__meta">
-                                        <li class="events-list__meta-date">
-                                            ${startDate.toLocaleDateString('en-US', { 
-                                                weekday: 'long', 
-                                                year: 'numeric', 
-                                                month: 'long', 
-                                                day: 'numeric' 
-                                            })}
-                                        </li>
-                                        <li class="events-list__meta-time">
-                                            ${startDate.toLocaleTimeString('en-US', { 
-                                                hour: 'numeric', 
-                                                minute: '2-digit' 
-                                            })}${event.endTime ? ` - ${event.endTime}` : ''}
-                                        </li>
-                                        <li class="events-list__meta-location">
-                                            ${event.location || 'Location TBD'}
-                                            ${event.locationUrl ? 
-                                                `<br><a href="${event.locationUrl}" target="_blank">View on Map</a>` : 
-                                                ''}
-                                        </li>
-                                        ${recurrenceText ? 
-                                            `<li class="events-list__meta-recurrence">${recurrenceText}</li>` : 
-                                            ''}
-                                    </ul>
-                                </div>
-                                
-                                <div class="event-actions">
-                                    <a href="/events" class="btn btn--stroke">Back to Events</a>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    window.location.href = '/events';
-                }
-            } catch (error) {
-                console.error("Error fetching event: ", error);
-                eventContainer.innerHTML = `
-                    <div class="row">
-                        <div class="column large-12">
-                            <h1 class="display-1">Error</h1>
-                            <p>Error loading event. Please try again later.</p>
-                            <div class="event-actions">
-                                <a href="/events" class="btn btn--stroke">Back to Events</a>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-        });
-    </script>
-</head>
-<body id="top">
+    <!-- Environment Configuration
+    ==================================================-->
+    <script type="module" src="js/env-config.js?v=2"></script>
+
+    <!-- scripts
+    ==================================================-->
+    <script src="js/modernizr.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/config-service.js"></script>
+    <script type="module" src="js/shared-config.js"></script><body id="top">
     <!-- preloader -->
     <div id="preloader">
         <div id="loader" class="dots-jump">
