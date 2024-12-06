@@ -4,7 +4,7 @@ import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, d
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue as getRemoteConfigValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-import { envReady } from './env-loader.js';
+import { envReady, getFirebaseConfig } from './env-config.js';
 
 let app;
 let db;
