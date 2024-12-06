@@ -60,28 +60,40 @@ class YouTubeService {
 
     async getApiKey() {
         try {
+            console.log('Getting YouTube API key for domain:', window.location.hostname);
+            
             // First try to get from window.__env
             if (window.__env && window.__env.YOUTUBE_API_KEY) {
+                console.log('Using YouTube API key from window.__env');
                 return window.__env.YOUTUBE_API_KEY;
             }
 
             // Then try to get from Firebase Remote Config
             try {
-                const { getValue, getRemoteConfig } = await import('./firebase-config.js');
-                const remoteConfig = getRemoteConfig();
-                const youtubeApiKey = await getValue('youtube_api_key');
+                const { getValue } = await import('./firebase-config.js');
+                console.log('Attempting to get YouTube API key from Remote Config...');
+                const youtubeApiKey = getValue('youtube_api_key');
                 if (youtubeApiKey) {
                     console.log('Using YouTube API key from Remote Config');
                     return youtubeApiKey;
                 }
             } catch (error) {
-                console.log('Error getting key from Remote Config:', error);
+                console.error('Error getting key from Remote Config:', error);
+                if (error.code) console.error('Error code:', error.code);
+                if (error.message) console.error('Error message:', error.message);
             }
 
             // Fallback to environment variable
             const envApiKey = getEnvVar('YOUTUBE_API_KEY');
             if (envApiKey) {
+                console.log('Using YouTube API key from environment variable');
                 return envApiKey;
+            }
+
+            // If we're on the .church domain, try to use the .org key
+            if (window.location.hostname.endsWith('.church')) {
+                console.log('On .church domain, attempting to use .org configuration...');
+                // You might want to add specific handling for .church domain here
             }
 
             throw new Error('YouTube API key not found');

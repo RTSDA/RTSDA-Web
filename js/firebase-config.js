@@ -72,10 +72,22 @@ async function initializeFirebase() {
 
         try {
             remoteConfig = getRemoteConfig(app);
+            
+            // Set up Remote Config settings based on domain
+            const settings = {
+                minimumFetchIntervalMillis: 0,  // Always fetch fresh values
+                fetchTimeoutMillis: 10000  // 10 second timeout
+            };
+            remoteConfig.settings = settings;
+            
+            console.log('Fetching Remote Config for domain:', window.location.hostname);
             await fetchAndActivate(remoteConfig);
             console.log('Remote Config fetched and activated');
         } catch (configError) {
             console.error('Error with Remote Config:', configError);
+            if (configError.code) console.error('Error code:', configError.code);
+            if (configError.message) console.error('Error message:', configError.message);
+            // Don't throw the error, just log it and continue
         }
 
         db = getFirestore(app);
@@ -90,14 +102,16 @@ async function initializeFirebase() {
         // Cache and validate the YouTube API key
         console.log('Attempting to fetch YouTube API key from Remote Config...');
         const youtubeApiKey = getRemoteConfigValue(remoteConfig, 'youtube_api_key');
-        console.log('YouTube API key status:', {
-            exists: !!youtubeApiKey,
-            type: youtubeApiKey ? typeof youtubeApiKey.asString() : 'undefined',
-            length: youtubeApiKey ? youtubeApiKey.asString().length : 0
-        });
-        
         if (youtubeApiKey) {
-            cachedConfig['youtube_api_key'] = youtubeApiKey.asString();
+            const apiKeyString = youtubeApiKey.asString();
+            console.log('YouTube API key status:', {
+                exists: true,
+                type: typeof apiKeyString,
+                length: apiKeyString.length,
+                preview: apiKeyString.substring(0, 5) + '...'
+            });
+            
+            cachedConfig['youtube_api_key'] = apiKeyString;
             console.log('Successfully cached YouTube API key from Remote Config');
         } else {
             console.warn('No YouTube API key found in Remote Config');
@@ -126,14 +140,20 @@ function getValue(key) {
         return null;
     }
 
-    // Try Remote Config
-    if (!remoteConfigInitialized) {
-        console.warn('Remote Config not initialized when getting value for:', key);
-        return null;
+    // First try cached config as it's fastest
+    const cachedValue = cachedConfig[key];
+    if (cachedValue) {
+        console.log(`Found cached value for ${key}:`, {
+            exists: true,
+            type: typeof cachedValue,
+            length: cachedValue.length,
+            preview: cachedValue.substring(0, 5) + '...'
+        });
+        return cachedValue;
     }
 
-    // Try Remote Config
-    if (remoteConfig) {
+    // Then try Remote Config
+    if (remoteConfig && remoteConfigInitialized) {
         try {
             console.log(`Fetching ${key} from Remote Config...`);
             const value = getRemoteConfigValue(remoteConfig, key);
@@ -145,6 +165,9 @@ function getValue(key) {
                     type: typeof stringValue,
                     preview: stringValue.substring(0, 5) + '...'
                 });
+                
+                // Cache the value for future use
+                cachedConfig[key] = stringValue;
                 return stringValue;
             } else {
                 console.warn(`No value found in Remote Config for key: ${key}`);
@@ -152,23 +175,11 @@ function getValue(key) {
         } catch (error) {
             console.warn(`Error getting ${key} from Remote Config:`, error);
         }
-    }
-
-    // Fallback to cached config
-    console.log(`Checking cached config for ${key}...`);
-    const cachedValue = cachedConfig[key];
-    if (cachedValue) {
-        console.log(`Found cached value for ${key}:`, {
-            exists: true,
-            type: typeof cachedValue,
-            length: cachedValue.length,
-            preview: cachedValue.substring(0, 5) + '...'
-        });
     } else {
-        console.log(`No cached value found for ${key}`);
+        console.warn('Remote Config not initialized when getting value for:', key);
     }
     
-    return cachedValue || null;
+    return null;
 }
 
 // Create a service class to match Android implementation
