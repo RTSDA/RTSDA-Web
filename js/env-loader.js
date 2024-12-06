@@ -46,19 +46,28 @@ function loadCloudflareEnv() {
         'YOUTUBE_API_KEY'
     ];
     
-    // In Cloudflare Pages, env vars are available under window.ENV
-    if (window.ENV) {
-        console.log('Found Cloudflare Pages environment variables');
-        for (const envVar of envVars) {
-            if (window.ENV[envVar]) {
-                window.__env[envVar] = window.ENV[envVar];
-                console.log(`Loaded ${envVar} from Cloudflare Pages`);
+    // In Cloudflare Pages, env vars are available in __STATIC_CONTENT_MANIFEST
+    if (window.__STATIC_CONTENT_MANIFEST) {
+        console.log('Found Cloudflare Pages runtime config');
+        try {
+            const manifest = JSON.parse(window.__STATIC_CONTENT_MANIFEST);
+            if (manifest.env) {
+                for (const envVar of envVars) {
+                    if (manifest.env[envVar]) {
+                        window.__env[envVar] = manifest.env[envVar];
+                        console.log(`Loaded ${envVar} from Cloudflare Pages`);
+                    } else {
+                        console.log(`Failed to load ${envVar} from Cloudflare Pages`);
+                    }
+                }
             } else {
-                console.log(`Failed to load ${envVar} from Cloudflare Pages`);
+                console.log('No environment variables found in runtime config');
             }
+        } catch (error) {
+            console.error('Error parsing runtime config:', error);
         }
     } else {
-        console.log('No Cloudflare Pages environment variables found');
+        console.log('No Cloudflare Pages runtime config found');
     }
     
     // Log final state
