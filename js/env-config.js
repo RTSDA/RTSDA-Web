@@ -8,39 +8,15 @@ export const envReady = new Promise((resolve, reject) => {
     rejectEnvReady = reject;
 });
 
-// Get an environment variable
+// Get an environment variable, checking both prefixed and unprefixed versions
 export function getEnvVar(key) {
-    return window.__env[key] || null;
-}
-
-// Get Firebase configuration
-export function getFirebaseConfig() {
-    const requiredKeys = [
-        'FIREBASE_API_KEY',
-        'FIREBASE_AUTH_DOMAIN',
-        'FIREBASE_PROJECT_ID',
-        'FIREBASE_STORAGE_BUCKET',
-        'FIREBASE_MESSAGING_SENDER_ID',
-        'FIREBASE_APP_ID'
-    ];
-
-    const missingKeys = requiredKeys.filter(key => !window.__env[key]);
-    if (missingKeys.length > 0) {
-        const error = new Error(`Missing required Firebase configuration: ${missingKeys.join(', ')}`);
-        console.error(error);
-        console.log('Current environment variables:', Object.keys(window.__env));
-        throw error;
+    // Try unprefixed first
+    if (window.__env[key]) {
+        return window.__env[key];
     }
-
-    return {
-        apiKey: window.__env.FIREBASE_API_KEY,
-        authDomain: window.__env.FIREBASE_AUTH_DOMAIN,
-        projectId: window.__env.FIREBASE_PROJECT_ID,
-        storageBucket: window.__env.FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: window.__env.FIREBASE_MESSAGING_SENDER_ID,
-        appId: window.__env.FIREBASE_APP_ID,
-        measurementId: window.__env.FIREBASE_MEASUREMENT_ID
-    };
+    // Then try with _CLOUDFLARE_ prefix
+    const prefixedKey = `_CLOUDFLARE_${key}`;
+    return window.__env[prefixedKey] || null;
 }
 
 // Fetch environment variables from Cloudflare Function
@@ -63,15 +39,8 @@ async function fetchEnvironmentVariables() {
         // Update window.__env with fetched variables
         Object.assign(window.__env, envVars);
         
-        // Try to validate Firebase config
-        try {
-            getFirebaseConfig();
-            console.log('Firebase configuration validated successfully');
-            resolveEnvReady(window.__env);
-        } catch (error) {
-            console.error('Firebase configuration validation failed:', error.message);
-            rejectEnvReady(error);
-        }
+        // Resolve the envReady promise
+        resolveEnvReady(window.__env);
     } catch (error) {
         console.error('Error fetching environment variables:', error);
         console.log('Current environment:', window.__env);

@@ -4,7 +4,7 @@ import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, d
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue as getRemoteConfigValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-import { envReady, getFirebaseConfig } from './env-config.js';
+import { envReady, getEnvVar } from './env-config.js';
 
 let app;
 let db;
@@ -13,6 +13,35 @@ let remoteConfig;
 let configInitialized = false;
 let remoteConfigInitialized = false;
 let cachedConfig = {};
+
+// Get Firebase configuration from environment variables
+function getFirebaseConfig() {
+    const requiredKeys = [
+        'FIREBASE_API_KEY',
+        'FIREBASE_AUTH_DOMAIN',
+        'FIREBASE_PROJECT_ID',
+        'FIREBASE_STORAGE_BUCKET',
+        'FIREBASE_MESSAGING_SENDER_ID',
+        'FIREBASE_APP_ID'
+    ];
+
+    const missingKeys = requiredKeys.filter(key => !getEnvVar(key));
+    if (missingKeys.length > 0) {
+        const error = new Error(`Missing required Firebase configuration: ${missingKeys.join(', ')}`);
+        console.error(error);
+        throw error;
+    }
+
+    return {
+        apiKey: getEnvVar('FIREBASE_API_KEY'),
+        authDomain: getEnvVar('FIREBASE_AUTH_DOMAIN'),
+        projectId: getEnvVar('FIREBASE_PROJECT_ID'),
+        storageBucket: getEnvVar('FIREBASE_STORAGE_BUCKET'),
+        messagingSenderId: getEnvVar('FIREBASE_MESSAGING_SENDER_ID'),
+        appId: getEnvVar('FIREBASE_APP_ID'),
+        measurementId: getEnvVar('FIREBASE_MEASUREMENT_ID')
+    };
+}
 
 // Initialize Firebase and all services
 async function initializeFirebase() {
