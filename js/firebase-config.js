@@ -65,21 +65,23 @@ export async function initializeFirebase() {
 
             // Initialize Firestore if not already initialized
             if (!db) {
-                db = getFirestore(app);
+                db = getFirestore();  // Don't pass app in v10
                 console.log('firebase-config.js: Firestore initialized');
             }
 
             // Initialize Auth if not already initialized
             if (!auth) {
-                auth = getAuth(app);
+                auth = getAuth();  // Don't pass app in v10
                 console.log('firebase-config.js: Auth initialized');
             }
 
             // Initialize Remote Config if not already initialized
             if (!remoteConfig) {
-                remoteConfig = getRemoteConfig();  // Don't pass app - it's automatically used
-                remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
-                remoteConfig.settings.fetchTimeoutMillis = 60000; // 1 minute
+                remoteConfig = getRemoteConfig();  // Don't pass app in v10
+                remoteConfig.settings = {
+                    minimumFetchIntervalMillis: 3600000, // 1 hour
+                    fetchTimeoutMillis: 60000 // 1 minute
+                };
                 console.log('firebase-config.js: Remote Config initialized');
                 
                 try {
@@ -93,7 +95,7 @@ export async function initializeFirebase() {
 
             // Initialize Analytics if measurementId is provided
             if (config.measurementId) {
-                getAnalytics(app);
+                getAnalytics();  // Don't pass app in v10
                 console.log('firebase-config.js: Analytics initialized');
             }
 
@@ -162,4 +164,4 @@ export class PrayerRequestService {
     }
 }
 
-export { db, auth, getRemoteConfig };
+export { db, auth, remoteConfig };

@@ -30,15 +30,14 @@ class YouTubeService {
             await envReady;
             console.log('YouTubeService: Environment variables loaded');
 
-            // Initialize Firebase
+            // Initialize Firebase and wait for Remote Config
             console.log('YouTubeService: Initializing Firebase...');
             await initializeFirebase();
             console.log('YouTubeService: Firebase initialized');
 
-            // Get Remote Config instance (already initialized by firebase-config.js)
-            console.log('YouTubeService: Getting Remote Config instance...');
-            this.remoteConfig = getRemoteConfig();
-            console.log('YouTubeService: Remote Config instance retrieved');
+            // Get Remote Config instance (already initialized)
+            this.remoteConfig = getRemoteConfig();  // Don't pass app in v10
+            console.log('YouTubeService: Got Remote Config instance');
 
             // Try to load cache from localStorage
             const savedCache = localStorage.getItem('youtubeCache');
