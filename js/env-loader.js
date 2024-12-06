@@ -31,128 +31,31 @@ function validateFirebaseConfig() {
     }
 }
 
-// Function to load environment variables from Cloudflare Pages
-function loadCloudflareEnv() {
-    console.log('Searching for environment variables in Cloudflare Pages...');
-    
-    const envVars = [
-        'FIREBASE_API_KEY',
-        'FIREBASE_AUTH_DOMAIN',
-        'FIREBASE_PROJECT_ID',
-        'FIREBASE_STORAGE_BUCKET',
-        'FIREBASE_MESSAGING_SENDER_ID',
-        'FIREBASE_APP_ID',
-        'FIREBASE_MEASUREMENT_ID',
-        'YOUTUBE_API_KEY'
-    ];
-    
-    // Debug window object properties
-    const windowEnvState = {
-        hasEnv: !!window.env,
-        env: window.env,
-        hasProcess: !!window.process,
-        processEnv: window.process?.env,
-        hasENV: !!window.ENV,
-        ENV: window.ENV,
-        hasBindings: !!window._bindings,
-        bindings: window._bindings
-    };
-    console.log('Window object:', windowEnvState);
-
-    // Check for environment-like properties
-    const envProps = {};
-    for (const prop in window) {
-        if (prop.includes('env') || prop.includes('ENV') || prop.includes('_bindings')) {
-            envProps[prop] = window[prop];
-        }
-    }
-    console.log('Found environment-like properties:', envProps);
-
-    // Try multiple environment variable sources
-    const sources = [
-        { name: 'window._env', get: (key) => window._env?.[key] },
-        { name: 'window.__env', get: (key) => window.__env?.[key] },
-        { name: 'window._bindings', get: (key) => window._bindings?.[key] },
-        { name: 'window.env', get: (key) => window.env?.[key] },
-        { name: 'window.ENV', get: (key) => window.ENV?.[key] },
-        { name: 'process.env', get: (key) => window.process?.env?.[key] }
-    ];
-
-    for (const envVar of envVars) {
-        let found = false;
-        for (const source of sources) {
-            const value = source.get(envVar);
-            if (value) {
-                window.__env[envVar] = value;
-                console.log(`Loaded ${envVar} from ${source.name}`);
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            console.log(`Failed to load ${envVar} from any source`);
-        }
-    }
-
-    // Log final state
-    console.log('Final environment state:', {
-        loadedVars: Object.keys(window.__env).filter(key => !!window.__env[key]),
-        missingVars: envVars.filter(key => !window.__env[key])
-    });
-}
-
-// Initialize configuration immediately
-window.__env = window.__env || {};
-
-// Try loading configuration multiple times with delays
-async function attemptLoad(attempt = 1) {
-    console.log(`Configuration load attempt ${attempt}/3`);
+// Function to load environment variables from config.js
+async function loadConfig() {
+    console.log('Loading environment configuration...');
     
     try {
-        // Try loading from Cloudflare Pages first
-        await loadCloudflareEnv();
+        // Import config.js which is generated during build
+        await import('./config.js');
+        
+        // Log loaded configuration (without sensitive values)
+        console.log('Configuration loaded with keys:', Object.keys(window.__env).join(', '));
         
         // Validate the configuration
-        try {
-            validateFirebaseConfig();
-            console.log('Configuration validated successfully');
-            return true;
-        } catch (validationError) {
-            console.warn(`Cloudflare environment validation failed: ${validationError}`);
-            
-            // If this is the last attempt, throw the error
-            if (attempt >= 3) {
-                throw validationError;
-            }
-            
-            // Otherwise retry
-            console.log(`Retrying in ${attempt * 1000}ms...`);
-            await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-            return attemptLoad(attempt + 1);
-        }
-    } catch (error) {
-        if (attempt >= 3) {
-            console.error('All configuration attempts failed');
-            throw error;
-        }
+        validateFirebaseConfig();
+        console.log('Configuration validated successfully');
         
-        console.log(`Retrying in ${attempt * 1000}ms...`);
-        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-        return attemptLoad(attempt + 1);
+        // Resolve the ready promise
+        resolveEnvReady(window.__env);
+    } catch (error) {
+        console.error('Failed to load configuration:', error);
+        rejectEnvReady(error);
     }
 }
 
-// Start the first attempt
-attemptLoad().then(() => {
-    console.log('Configuration loaded successfully');
-    resolveEnvReady(window.__env);
-}).catch(error => {
-    console.error('Configuration load failed:', error);
-    // Set a flag to indicate configuration failed
-    window.__envLoadFailed = true;
-    // Reject the ready promise
-    rejectEnvReady(error);
-});
+// Start loading configuration
+loadConfig();
 
 // Export the ready promise
 export const envReady = window.__envReady;
