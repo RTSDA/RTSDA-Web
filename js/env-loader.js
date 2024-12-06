@@ -46,18 +46,26 @@ function loadCloudflareEnv() {
         'YOUTUBE_API_KEY'
     ];
     
-    // Log all window properties for debugging
-    console.log('All window properties:', Object.keys(window));
-    
-    // In Cloudflare Pages, env vars are prefixed with _CLOUDFLARE_
-    for (const envVar of envVars) {
-        const cfVar = `_CLOUDFLARE_${envVar}`;
-        if (cfVar in window) {
-            window.__env[envVar] = window[cfVar];
-            console.log(`Loaded ${envVar} from Cloudflare Pages (${cfVar})`);
-        } else {
-            console.log(`Failed to load ${envVar} from Cloudflare Pages (${cfVar})`);
+    // Debug: Log all possible environment variable locations
+    console.log('Debug - Environment locations:', {
+        bindings: typeof window._bindings,
+        bindingsKeys: window._bindings ? Object.keys(window._bindings) : null,
+        env: window.env,
+        ENV: window.ENV
+    });
+
+    // Try to load from Cloudflare bindings
+    if (window._bindings) {
+        for (const envVar of envVars) {
+            if (window._bindings[envVar]) {
+                window.__env[envVar] = window._bindings[envVar];
+                console.log(`Loaded ${envVar} from Cloudflare bindings`);
+            } else {
+                console.log(`Failed to load ${envVar} from Cloudflare bindings`);
+            }
         }
+    } else {
+        console.log('No Cloudflare bindings found');
     }
     
     // Log final state
