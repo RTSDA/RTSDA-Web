@@ -1,13 +1,13 @@
 // This file will be replaced during build with actual values
 window.__env = {
-    FIREBASE_API_KEY: '',
-    FIREBASE_AUTH_DOMAIN: '',
-    FIREBASE_PROJECT_ID: '',
-    FIREBASE_STORAGE_BUCKET: '',
-    FIREBASE_MESSAGING_SENDER_ID: '',
-    FIREBASE_APP_ID: '',
-    FIREBASE_MEASUREMENT_ID: '',
-    YOUTUBE_API_KEY: ''
+    FIREBASE_API_KEY: 'AIzaSyDevelopmentKeyForLocalTesting',
+    FIREBASE_AUTH_DOMAIN: 'rtsda-development.firebaseapp.com',
+    FIREBASE_PROJECT_ID: 'rtsda-development',
+    FIREBASE_STORAGE_BUCKET: 'rtsda-development.appspot.com',
+    FIREBASE_MESSAGING_SENDER_ID: '123456789012',
+    FIREBASE_APP_ID: '1:123456789012:web:abcdef1234567890',
+    FIREBASE_MEASUREMENT_ID: 'G-DEVELOPMENT123',
+    YOUTUBE_API_KEY: '' // Not needed since we get this from Remote Config
 };
 
 // Log configuration load time
