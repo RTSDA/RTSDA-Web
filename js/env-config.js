@@ -22,11 +22,11 @@ export function getEnvVar(key) {
     return value;
 }
 
-// Fetch environment variables from Cloudflare Function
+// Fetch environment variables from Cloudflare
 async function fetchEnvironmentVariables() {
     try {
         console.log('env-config.js: Fetching environment variables...');
-        const response = await fetch('/functions/env');
+        const response = await fetch('/env');
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
