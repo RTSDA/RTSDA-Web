@@ -73,22 +73,12 @@ async function initializeFirebase() {
         try {
             remoteConfig = getRemoteConfig(app);
             
-            // Set up Remote Config settings based on domain
+            // Set up Remote Config settings
             const settings = {
                 minimumFetchIntervalMillis: 0,  // Always fetch fresh values
                 fetchTimeoutMillis: 10000  // 10 second timeout
             };
             remoteConfig.settings = settings;
-            
-            const currentDomain = window.location.hostname;
-            const isPreviewDomain = currentDomain === 'rtsda-web.pages.dev';
-            const effectiveDomain = isPreviewDomain ? 'rockvilletollandsda.org' : currentDomain;
-            
-            console.log('Fetching Remote Config:', {
-                currentDomain,
-                isPreviewDomain,
-                effectiveDomain
-            });
             
             // Set default values for Remote Config
             remoteConfig.defaultConfig = {
@@ -98,7 +88,7 @@ async function initializeFirebase() {
             await fetchAndActivate(remoteConfig);
             console.log('Remote Config fetched and activated');
             
-            // Cache the YouTube API key with domain info
+            // Cache the YouTube API key
             try {
                 const youtubeApiKey = getRemoteConfigValue(remoteConfig, 'youtube_api_key');
                 if (youtubeApiKey) {
@@ -106,23 +96,14 @@ async function initializeFirebase() {
                     console.log('YouTube API key status:', {
                         exists: true,
                         type: typeof apiKeyString,
-                        length: apiKeyString.length,
-                        currentDomain,
-                        effectiveDomain
+                        length: apiKeyString.length
                     });
                     
-                    // Store with both current and effective domain info
-                    cachedConfig['youtube_api_key_' + currentDomain] = apiKeyString;
-                    cachedConfig['youtube_api_key_' + effectiveDomain] = apiKeyString;
-                    // Also store without domain for backward compatibility
+                    // Store in cache
                     cachedConfig['youtube_api_key'] = apiKeyString;
-                    
-                    console.log('Successfully cached YouTube API key for domains:', {
-                        currentDomain,
-                        effectiveDomain
-                    });
+                    console.log('Successfully cached YouTube API key');
                 } else {
-                    console.warn('No YouTube API key found in Remote Config for domain:', effectiveDomain);
+                    console.warn('No YouTube API key found in Remote Config');
                 }
             } catch (apiKeyError) {
                 console.error('Error caching YouTube API key:', apiKeyError);
@@ -159,56 +140,26 @@ function getValue(key) {
         return null;
     }
     
-    const currentDomain = window.location.hostname;
-    const isPreviewDomain = currentDomain === 'rtsda-web.pages.dev';
-    const effectiveDomain = isPreviewDomain ? 'rockvilletollandsda.org' : currentDomain;
-    
-    console.log(`Getting value for key: ${key}`, {
-        currentDomain,
-        isPreviewDomain,
-        effectiveDomain
-    });
-    
     if (!configInitialized) {
         console.warn('Firebase not initialized when getting value for:', key);
         return null;
     }
 
-    // First try current domain-specific cached value
-    const currentDomainKey = `${key}_${currentDomain}`;
-    const currentDomainValue = cachedConfig[currentDomainKey];
-    if (currentDomainValue) {
-        console.log(`Found current domain cached value for ${key}:`, {
+    // Try to get from cache first
+    const cachedValue = cachedConfig[key];
+    if (cachedValue) {
+        console.log(`Found cached value for ${key}:`, {
             exists: true,
-            type: typeof currentDomainValue,
-            length: currentDomainValue.length,
-            preview: currentDomainValue.substring(0, 5) + '...',
-            domain: currentDomain
+            type: typeof cachedValue,
+            length: cachedValue.length,
+            preview: cachedValue.substring(0, 5) + '...'
         });
-        return currentDomainValue;
-    }
-
-    // Then try effective domain cached value
-    const effectiveDomainKey = `${key}_${effectiveDomain}`;
-    const effectiveDomainValue = cachedConfig[effectiveDomainKey];
-    if (effectiveDomainValue) {
-        console.log(`Found effective domain cached value for ${key}:`, {
-            exists: true,
-            type: typeof effectiveDomainValue,
-            length: effectiveDomainValue.length,
-            preview: effectiveDomainValue.substring(0, 5) + '...',
-            domain: effectiveDomain
-        });
-        return effectiveDomainValue;
+        return cachedValue;
     }
 
     // Then try Remote Config
     if (remoteConfig && remoteConfigInitialized) {
         try {
-            console.log(`Fetching ${key} from Remote Config for domain:`, {
-                currentDomain,
-                effectiveDomain
-            });
             const value = getRemoteConfigValue(remoteConfig, key);
             if (value) {
                 const stringValue = value.asString();
@@ -216,45 +167,18 @@ function getValue(key) {
                     exists: true,
                     length: stringValue.length,
                     type: typeof stringValue,
-                    preview: stringValue.substring(0, 5) + '...',
-                    currentDomain,
-                    effectiveDomain
+                    preview: stringValue.substring(0, 5) + '...'
                 });
                 
-                // Cache for both current and effective domains
-                cachedConfig[currentDomainKey] = stringValue;
-                cachedConfig[effectiveDomainKey] = stringValue;
+                // Cache the value
                 cachedConfig[key] = stringValue;
                 return stringValue;
-            } else {
-                console.warn(`No value found in Remote Config for key: ${key}`, {
-                    currentDomain,
-                    effectiveDomain
-                });
             }
         } catch (error) {
             console.warn(`Error getting ${key} from Remote Config:`, error);
         }
-    } else {
-        console.warn('Remote Config not initialized when getting value for:', key);
     }
     
-    // Finally try general cached value
-    const generalCachedValue = cachedConfig[key];
-    if (generalCachedValue) {
-        console.log(`Found general cached value for ${key}:`, {
-            exists: true,
-            type: typeof generalCachedValue,
-            length: generalCachedValue.length,
-            preview: generalCachedValue.substring(0, 5) + '...'
-        });
-        return generalCachedValue;
-    }
-    
-    console.log(`No value found for ${key}`, {
-        currentDomain,
-        effectiveDomain
-    });
     return null;
 }
 

@@ -1,4 +1,5 @@
 import { getEnvVar } from './env-config.js';
+import { getValue } from './firebase-config.js';
 
 const CHANNEL_ID = 'UCH3GQ7cC1gvTSEbTSg2jW3Q';  // Fixed channel ID
 const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -60,7 +61,7 @@ class YouTubeService {
 
     async getApiKey() {
         try {
-            console.log('Getting YouTube API key for domain:', window.location.hostname);
+            console.log('Getting YouTube API key...');
             
             // First try to get from window.__env
             if (window.__env && window.__env.YOUTUBE_API_KEY) {
@@ -69,18 +70,11 @@ class YouTubeService {
             }
 
             // Then try to get from Firebase Remote Config
-            try {
-                const { getValue } = await import('./firebase-config.js');
-                console.log('Attempting to get YouTube API key from Remote Config...');
-                const youtubeApiKey = getValue('youtube_api_key');
-                if (youtubeApiKey) {
-                    console.log('Using YouTube API key from Remote Config');
-                    return youtubeApiKey;
-                }
-            } catch (error) {
-                console.error('Error getting key from Remote Config:', error);
-                if (error.code) console.error('Error code:', error.code);
-                if (error.message) console.error('Error message:', error.message);
+            console.log('Attempting to get YouTube API key from Remote Config...');
+            const youtubeApiKey = getValue('youtube_api_key');
+            if (youtubeApiKey) {
+                console.log('Using YouTube API key from Remote Config');
+                return youtubeApiKey;
             }
 
             // Fallback to environment variable
@@ -88,12 +82,6 @@ class YouTubeService {
             if (envApiKey) {
                 console.log('Using YouTube API key from environment variable');
                 return envApiKey;
-            }
-
-            // If we're on the .church domain, try to use the .org key
-            if (window.location.hostname.endsWith('.church')) {
-                console.log('On .church domain, attempting to use .org configuration...');
-                // You might want to add specific handling for .church domain here
             }
 
             throw new Error('YouTube API key not found');
