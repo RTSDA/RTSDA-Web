@@ -22,8 +22,8 @@ export function getEnvVar(key) {
 // Fetch environment variables from Cloudflare Function
 async function fetchEnvironmentVariables() {
     try {
-        console.log('Fetching environment variables from functions/env...');
-        const response = await fetch('/functions/env');
+        console.log('Fetching environment variables from /env...');
+        const response = await fetch('/env');
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -33,7 +33,7 @@ async function fetchEnvironmentVariables() {
         console.log('Successfully fetched environment variables. Available keys:', Object.keys(envVars).join(', '));
         
         if (Object.keys(envVars).length === 0) {
-            throw new Error('No environment variables returned from /functions/env');
+            throw new Error('No environment variables returned from /env');
         }
         
         // Update window.__env with fetched variables
