@@ -322,7 +322,50 @@
 
     <!-- Firebase Scripts -->
     <script type="module">
+        // Helper functions
+        function setLoadingState(isLoading, message = 'Loading...') {
+            const sermonTitle = document.getElementById('sermon-title');
+            const sermonDescription = document.getElementById('sermon-description');
+            if (isLoading) {
+                sermonTitle.textContent = message;
+                sermonDescription.textContent = 'Please wait...';
+            }
+        }
+        
+        function setErrorState(message) {
+            const sermonTitle = document.getElementById('sermon-title');
+            const sermonDescription = document.getElementById('sermon-description');
+            sermonTitle.textContent = 'Error';
+            sermonDescription.textContent = message;
+            setLoadingState(false);
+        }
+
+        async function updateLatestSermon(youtubeService) {
+            try {
+                const latestVideo = await youtubeService.getLatestSermon();
+                if (latestVideo) {
+                    const sermonTitle = document.getElementById('sermon-title');
+                    const sermonDescription = document.getElementById('sermon-description');
+                    const sermonVideo = document.getElementById('sermon-video');
+                    
+                    sermonTitle.textContent = latestVideo.title;
+                    sermonDescription.textContent = latestVideo.description;
+                    
+                    // Set the video URL
+                    if (latestVideo.videoId) {
+                        sermonVideo.src = `https://www.youtube.com/embed/${latestVideo.videoId}`;
+                    }
+                } else {
+                    throw new Error('No videos found');
+                }
+            } catch (error) {
+                console.error('Error updating latest sermon:', error);
+                throw error;
+            }
+        }
+
         try {
+            setLoadingState(true, 'Initializing app...');
             console.log('Starting app initialization...');
             
             // Wait for environment variables to be ready
@@ -351,7 +394,7 @@
             setLoadingState(false);
         } catch (error) {
             console.error('Error initializing app:', error);
-            setLoadingState(false, 'Error loading app');
+            setErrorState('Error loading app: ' + error.message);
         }
     </script>
     <script type="module" src="js/index-events.js"></script>

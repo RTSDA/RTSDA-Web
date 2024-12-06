@@ -74,6 +74,18 @@ function loadCloudflareEnv() {
     }
     console.log('Found environment-like properties:', debugObj);
     
+    // Try to get environment variables from the runtime config
+    if (typeof window !== 'undefined' && '__runtime_config' in window) {
+        console.log('Found runtime config, checking for environment variables...');
+        const runtimeConfig = window.__runtime_config;
+        for (const envVar of envVars) {
+            if (envVar in runtimeConfig) {
+                window.__env[envVar] = runtimeConfig[envVar];
+                console.log(`Loaded ${envVar} from runtime config`);
+            }
+        }
+    }
+    
     // In Cloudflare Pages, env vars are injected into a global env object
     const envSources = [
         window.env,                    // Standard Cloudflare Pages injection
