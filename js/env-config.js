@@ -1,5 +1,5 @@
 // Initialize environment configuration
-window.__env = window.ENV || {};
+window.__env = window.__env || {};
 
 // Create a promise that resolves when config is ready
 let resolveEnvReady;
@@ -39,5 +39,28 @@ export function getFirebaseConfig() {
     };
 }
 
-// Initialize immediately
-resolveEnvReady(window.__env);
+// Fetch environment variables from Cloudflare Pages
+async function fetchEnvironmentVariables() {
+    try {
+        console.log('Fetching environment variables from /env...');
+        const response = await fetch('/env');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const envVars = await response.json();
+        console.log('Successfully fetched environment variables. Available keys:', Object.keys(envVars).join(', '));
+        
+        // Update window.__env with fetched variables
+        Object.assign(window.__env, envVars);
+        
+        // Resolve the envReady promise
+        resolveEnvReady(window.__env);
+    } catch (error) {
+        console.error('Error fetching environment variables:', error);
+        // If fetch fails, try to proceed with any variables we might have from config.js
+        resolveEnvReady(window.__env);
+    }
+}
+
+// Initialize by fetching environment variables
+fetchEnvironmentVariables();
