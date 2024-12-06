@@ -100,8 +100,13 @@ async function initializeFirebase() {
                 console.log('Getting YouTube API key from Remote Config...');
                 const youtubeApiKey = getRemoteConfigValue(remoteConfig, 'youtube_api_key');
                 if (youtubeApiKey) {
-                    console.log('YouTube API key found in Remote Config');
-                    cachedConfig['youtube_api_key'] = youtubeApiKey.asString();
+                    const keyValue = youtubeApiKey.asString();
+                    if (keyValue && keyValue.trim() !== '') {
+                        console.log('YouTube API key found in Remote Config');
+                        cachedConfig['youtube_api_key'] = keyValue;
+                    } else {
+                        console.warn('YouTube API key in Remote Config is empty');
+                    }
                 } else {
                     console.warn('YouTube API key not found in Remote Config');
                 }
@@ -154,19 +159,31 @@ async function getValue(key) {
             });
         }
 
-        // Check if the key is in the cache
+        // First check the cache
         if (key && typeof key === 'string' && cachedConfig[key]) {
+            console.log(`Found ${key} in cache`);
             return cachedConfig[key];
         }
 
         // If not in cache and Remote Config is initialized, try to get from Remote Config
         if (remoteConfigInitialized && remoteConfig) {
-            const value = getRemoteConfigValue(remoteConfig, key);
-            if (value) {
-                // Cache the value
-                cachedConfig[key] = value.asString();
-                return cachedConfig[key];
+            console.log(`Getting ${key} from Remote Config...`);
+            try {
+                const value = getRemoteConfigValue(remoteConfig, key);
+                if (value) {
+                    const stringValue = value.asString();
+                    if (stringValue && stringValue.trim() !== '') {
+                        console.log(`Got ${key} from Remote Config`);
+                        cachedConfig[key] = stringValue;
+                        return stringValue;
+                    }
+                }
+                console.warn(`${key} not found in Remote Config or is empty`);
+            } catch (error) {
+                console.error(`Error getting ${key} from Remote Config:`, error);
             }
+        } else {
+            console.warn('Remote Config not initialized yet');
         }
 
         return null;
