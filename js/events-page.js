@@ -1,4 +1,5 @@
 import { initializeFirebase, db, auth } from './firebase-config.js';
+import { envReady } from './env-config.js';
 import { 
     collection, 
     query, 
@@ -112,7 +113,12 @@ async function loadEvents() {
     }
     
     try {
-        // Initialize Firebase first
+        // Wait for environment variables first
+        console.log('events-page.js: Waiting for environment variables...');
+        await envReady;
+        console.log('events-page.js: Environment variables loaded');
+        
+        // Initialize Firebase
         await initializeFirebase();
         console.log('events-page.js: Firebase initialized');
         

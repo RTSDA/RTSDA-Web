@@ -18,8 +18,8 @@ class YouTubeService {
         if (instance) {
             return instance;
         }
-        this.initializeService();
         instance = this;
+        this.initialized = this.initializeService();
         return instance;
     }
 
@@ -196,8 +196,11 @@ class YouTubeService {
     }
 
     async getLatestSermon() {
+        // Wait for initialization to complete
+        await this.initialized;
+        
         // Check cache first
-        if (this.isCacheValid('sermon') && this.cache.sermon) {
+        if (this.isCacheValid('sermon')) {
             console.log('Using cached sermon data');
             return this.cache.sermon;
         }
