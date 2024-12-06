@@ -3,7 +3,7 @@
  *
  * ------------------------------------------------------------------- */
 
-const cfg = {
+export const cfg = {
     scrollDuration : 800, // smoothscroll duration
     mailChimpURL   : ''   // mailchimp url
 };
