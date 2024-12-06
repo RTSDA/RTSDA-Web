@@ -33,7 +33,7 @@ function validateFirebaseConfig() {
 
 // Function to load environment variables from Cloudflare Pages
 function loadCloudflareEnv() {
-    console.log('Loading environment variables from Cloudflare Pages...');
+    console.log('Searching for environment variables in Cloudflare Pages...');
     
     const envVars = [
         'FIREBASE_API_KEY',
@@ -46,31 +46,57 @@ function loadCloudflareEnv() {
         'YOUTUBE_API_KEY'
     ];
     
-    // Debug: Log all possible environment variable locations
-    console.log('Debug - Environment locations:', {
-        bindings: typeof window._bindings,
-        bindingsKeys: window._bindings ? Object.keys(window._bindings) : null,
+    // Debug window object properties
+    const windowEnvState = {
+        hasEnv: !!window.env,
         env: window.env,
-        ENV: window.ENV
-    });
+        hasProcess: !!window.process,
+        processEnv: window.process?.env,
+        hasENV: !!window.ENV,
+        ENV: window.ENV,
+        hasBindings: !!window._bindings,
+        bindings: window._bindings
+    };
+    console.log('Window object:', windowEnvState);
 
-    // Try to load from Cloudflare bindings
-    if (window._bindings) {
-        for (const envVar of envVars) {
-            if (window._bindings[envVar]) {
-                window.__env[envVar] = window._bindings[envVar];
-                console.log(`Loaded ${envVar} from Cloudflare bindings`);
-            } else {
-                console.log(`Failed to load ${envVar} from Cloudflare bindings`);
+    // Check for environment-like properties
+    const envProps = {};
+    for (const prop in window) {
+        if (prop.includes('env') || prop.includes('ENV') || prop.includes('_bindings')) {
+            envProps[prop] = window[prop];
+        }
+    }
+    console.log('Found environment-like properties:', envProps);
+
+    // Try multiple environment variable sources
+    const sources = [
+        { name: 'window._env', get: (key) => window._env?.[key] },
+        { name: 'window.__env', get: (key) => window.__env?.[key] },
+        { name: 'window._bindings', get: (key) => window._bindings?.[key] },
+        { name: 'window.env', get: (key) => window.env?.[key] },
+        { name: 'window.ENV', get: (key) => window.ENV?.[key] },
+        { name: 'process.env', get: (key) => window.process?.env?.[key] }
+    ];
+
+    for (const envVar of envVars) {
+        let found = false;
+        for (const source of sources) {
+            const value = source.get(envVar);
+            if (value) {
+                window.__env[envVar] = value;
+                console.log(`Loaded ${envVar} from ${source.name}`);
+                found = true;
+                break;
             }
         }
-    } else {
-        console.log('No Cloudflare bindings found');
+        if (!found) {
+            console.log(`Failed to load ${envVar} from any source`);
+        }
     }
-    
+
     // Log final state
-    console.log('Environment variables loaded:', {
-        loadedVars: Object.keys(window.__env),
+    console.log('Final environment state:', {
+        loadedVars: Object.keys(window.__env).filter(key => !!window.__env[key]),
         missingVars: envVars.filter(key => !window.__env[key])
     });
 }
