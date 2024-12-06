@@ -114,6 +114,11 @@ async function initializeFirebase() {
 
 // Helper function to get config values
 function getValue(key) {
+    if (typeof key !== 'string') {
+        console.error('Invalid key type:', typeof key);
+        return null;
+    }
+    
     console.log(`Getting value for key: ${key}`);
     
     if (!configInitialized) {
@@ -137,7 +142,8 @@ function getValue(key) {
                 console.log(`Successfully retrieved ${key} from Remote Config:`, {
                     exists: true,
                     length: stringValue.length,
-                    type: typeof stringValue
+                    type: typeof stringValue,
+                    preview: stringValue.substring(0, 5) + '...'
                 });
                 return stringValue;
             } else {
@@ -151,11 +157,16 @@ function getValue(key) {
     // Fallback to cached config
     console.log(`Checking cached config for ${key}...`);
     const cachedValue = cachedConfig[key];
-    console.log(`Cached value status for ${key}:`, {
-        exists: !!cachedValue,
-        type: typeof cachedValue,
-        length: cachedValue ? cachedValue.length : 0
-    });
+    if (cachedValue) {
+        console.log(`Found cached value for ${key}:`, {
+            exists: true,
+            type: typeof cachedValue,
+            length: cachedValue.length,
+            preview: cachedValue.substring(0, 5) + '...'
+        });
+    } else {
+        console.log(`No cached value found for ${key}`);
+    }
     
     return cachedValue || null;
 }

@@ -69,7 +69,7 @@ class YouTubeService {
             try {
                 const { getValue, getRemoteConfig } = await import('./firebase-config.js');
                 const remoteConfig = getRemoteConfig();
-                const youtubeApiKey = await getValue(remoteConfig, 'youtube_api_key');
+                const youtubeApiKey = await getValue('youtube_api_key');
                 if (youtubeApiKey) {
                     console.log('Using YouTube API key from Remote Config');
                     return youtubeApiKey;
