@@ -337,6 +337,9 @@
                 // Wait for environment variables to be ready
                 await envReady;
                 
+                // Initialize Firebase first
+                await initializeFirebase();
+                
                 // Create YouTube service and wait for initialization
                 youtubeService = new YouTubeService();
                 await youtubeService.initializeService();

@@ -65,16 +65,17 @@ class YouTubeService {
                 return window.__env.YOUTUBE_API_KEY;
             }
 
-            // Then try to get from Firebase if available
+            // Then try to get from Firebase Remote Config
             try {
                 const { getValue, getRemoteConfig } = await import('./firebase-config.js');
                 const remoteConfig = getRemoteConfig();
                 const youtubeApiKey = await getValue(remoteConfig, 'youtube_api_key');
                 if (youtubeApiKey) {
+                    console.log('Using YouTube API key from Remote Config');
                     return youtubeApiKey;
                 }
             } catch (error) {
-                console.log('Firebase not available, skipping Remote Config');
+                console.log('Error getting key from Remote Config:', error);
             }
 
             // Fallback to environment variable
@@ -125,14 +126,45 @@ class YouTubeService {
             }
 
             const data = await this.fetchFromYouTube('/search', {
-                part: 'snippet',
+                part: 'snippet,id',
                 eventType: 'upcoming',
                 type: 'video',
                 order: 'date',
-                maxResults: 1
+                maxResults: 1,
+                fields: 'items(id/videoId,snippet/title,snippet/description,snippet/publishedAt,snippet/liveBroadcastContent)'
             });
 
+            console.log('YouTube API response:', data);
+
             if (!data.items || data.items.length === 0) {
+                // Try searching for live streams as well
+                const liveData = await this.fetchFromYouTube('/search', {
+                    part: 'snippet,id',
+                    eventType: 'live',
+                    type: 'video',
+                    order: 'date',
+                    maxResults: 1,
+                    fields: 'items(id/videoId,snippet/title,snippet/description,snippet/publishedAt,snippet/liveBroadcastContent)'
+                });
+
+                console.log('YouTube API live response:', liveData);
+
+                if (liveData.items && liveData.items.length > 0) {
+                    const livestream = {
+                        videoId: liveData.items[0].id.videoId,
+                        title: liveData.items[0].snippet.title,
+                        description: liveData.items[0].snippet.description,
+                        scheduledStartTime: 'Live Now',
+                        isLive: true
+                    };
+
+                    this.cache.livestream = livestream;
+                    this.lastFetch.livestream = Date.now();
+                    this.saveCache();
+
+                    return livestream;
+                }
+
                 this.cache.livestream = null;
                 this.lastFetch.livestream = Date.now();
                 this.saveCache();
@@ -143,7 +175,8 @@ class YouTubeService {
                 videoId: data.items[0].id.videoId,
                 title: data.items[0].snippet.title,
                 description: data.items[0].snippet.description,
-                scheduledStartTime: data.items[0].snippet.publishedAt
+                scheduledStartTime: data.items[0].snippet.publishedAt,
+                isLive: false
             };
 
             this.cache.livestream = livestream;
@@ -169,7 +202,9 @@ class YouTubeService {
         
         try {
             // Get API key from Remote Config
+            console.log('Getting YouTube API key...');
             const apiKey = await this.getApiKey();
+            console.log('API key available:', !!apiKey);
             
             if (!apiKey) {
                 console.error('YouTube API key not available');
@@ -182,8 +217,11 @@ class YouTubeService {
             }
 
             // First get a list of recent videos
+            console.log('Fetching recent videos...');
             const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${CHANNEL_ID}&part=snippet&order=date&maxResults=50&type=video`;
+            console.log('Search URL:', searchUrl.replace(apiKey, '[REDACTED]'));
             const searchResponse = await fetch(searchUrl);
+            console.log('Search response status:', searchResponse.status);
             
             if (!searchResponse.ok) {
                 const error = await searchResponse.json();
@@ -197,6 +235,7 @@ class YouTubeService {
             }
 
             const searchData = await searchResponse.json();
+            console.log('Found videos:', searchData.items?.length || 0);
             
             if (!searchData.items || searchData.items.length === 0) {
                 console.warn('No videos found');
@@ -210,10 +249,14 @@ class YouTubeService {
 
             // Get video IDs
             const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+            console.log('Fetching details for videos:', videoIds);
 
             // Get detailed video information including duration
             const videosUrl = `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&id=${videoIds}&part=snippet,contentDetails`;
+            console.log('Videos URL:', videosUrl.replace(apiKey, '[REDACTED]'));
             const videosResponse = await fetch(videosUrl);
+            console.log('Videos response status:', videosResponse.status);
+
             const videosData = await videosResponse.json();
 
             // Find all videos that match sermon criteria

@@ -1,7 +1,6 @@
 {
-  "proxy": "http://localhost:80",
   "scripts": {
-    "dev": "sudo http-server --cors -c-1 -p 80 -a localhost --mime-types '{\"env\":\"text/plain\"}'"
+    "dev": "http-server . --cors -c-1 -p 3000"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
