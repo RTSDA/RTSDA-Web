@@ -76,13 +76,10 @@ class YouTubeService {
 
     async getApiKey() {
         try {
-            console.log('Getting YouTube API key from Remote Config...');
-            if (!this.remoteConfig) {
-                console.error('Remote Config not initialized');
-                return null;
-            }
+            // Wait for Firebase to initialize
+            await initializeFirebase();
             
-            const youtubeApiKey = getValue('YOUTUBE_API_KEY');
+            const youtubeApiKey = getValue('youtube_api_key');
             if (!youtubeApiKey) {
                 console.error('YouTube API key not found in Remote Config');
                 return null;

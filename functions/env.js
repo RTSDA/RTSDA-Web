@@ -17,7 +17,8 @@ export async function onRequest(context) {
     'FIREBASE_STORAGE_BUCKET',
     'FIREBASE_MESSAGING_SENDER_ID',
     'FIREBASE_APP_ID',
-    'FIREBASE_MEASUREMENT_ID'
+    'FIREBASE_MEASUREMENT_ID',
+    'YOUTUBE_API_KEY'  // Added YouTube API key
   ];
 
   // Create a filtered object with only allowed variables
