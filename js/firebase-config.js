@@ -45,14 +45,27 @@ function getFirebaseConfig() {
 // Initialize Firebase and all services
 async function initializeFirebase() {
     try {
-        console.log('Firebase configuration loaded successfully');
+        console.log('Starting Firebase initialization...');
         
         // Wait for environment variables to be ready
-        await envReady;
+        console.log('Waiting for environment variables...');
+        await window.__envReady;
+        console.log('Environment variables ready:', {
+            hasFirebaseConfig: Object.keys(getFirebaseConfig()).length > 0,
+            envVars: Object.keys(window.__env || {})
+        });
         
         // Initialize Firebase with error handling
         const firebaseConfig = getFirebaseConfig();
-        console.log('Initializing Firebase with configuration');
+        if (!firebaseConfig.apiKey) {
+            throw new Error('Firebase API key is missing. Check Cloudflare Pages environment variables.');
+        }
+        console.log('Initializing Firebase with configuration:', {
+            projectId: firebaseConfig.projectId,
+            hasApiKey: !!firebaseConfig.apiKey,
+            authDomain: firebaseConfig.authDomain
+        });
+        
         app = initializeApp(firebaseConfig);
         
         // Initialize optional Firebase features
@@ -64,23 +77,31 @@ async function initializeFirebase() {
         console.log('Firebase initialization successful');
 
         try {
+            console.log('Initializing Remote Config...');
             remoteConfig = getRemoteConfig(app);
             remoteConfig.settings = {
                 minimumFetchIntervalMillis: 0,
                 fetchTimeoutMillis: 10000
             };
             
+            console.log('Fetching Remote Config...');
             await fetchAndActivate(remoteConfig);
             console.log('Remote Config fetched and activated');
             
             // Cache the YouTube API key
             try {
+                console.log('Getting YouTube API key from Remote Config...');
                 const youtubeApiKey = getRemoteConfigValue(remoteConfig, 'youtube_api_key');
                 if (youtubeApiKey) {
+                    console.log('YouTube API key found in Remote Config');
                     cachedConfig['youtube_api_key'] = youtubeApiKey.asString();
+                } else {
+                    console.warn('YouTube API key not found in Remote Config');
                 }
             } catch (error) {
                 console.error('Error caching YouTube API key:', error);
+                if (error.code) console.error('Error code:', error.code);
+                if (error.message) console.error('Error message:', error.message);
             }
         } catch (configError) {
             console.error('Error with Remote Config:', configError);
@@ -108,27 +129,28 @@ async function initializeFirebase() {
 }
 
 // Helper function to get config values
-function getValue(key) {
-    // Try cache first
-    if (cachedConfig[key]) {
-        return cachedConfig[key];
-    }
-    
-    // Then try Remote Config
-    if (remoteConfig && remoteConfigInitialized) {
-        try {
+async function getValue(key) {
+    try {
+        // Check if the key is in the cache
+        if (key && typeof key === 'string' && cachedConfig[key]) {
+            return cachedConfig[key];
+        }
+
+        // If not in cache and Remote Config is initialized, try to get from Remote Config
+        if (remoteConfig) {
             const value = getRemoteConfigValue(remoteConfig, key);
             if (value) {
-                const stringValue = value.asString();
-                cachedConfig[key] = stringValue;
-                return stringValue;
+                // Cache the value
+                cachedConfig[key] = value.asString();
+                return cachedConfig[key];
             }
-        } catch (error) {
-            console.error('Error getting value from Remote Config:', error);
         }
+
+        return null;
+    } catch (error) {
+        console.error('Error getting value for key:', key, error);
+        return null;
     }
-    
-    return null;
 }
 
 // Create a service class to match Android implementation
