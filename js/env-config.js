@@ -2,9 +2,10 @@
 window.__env = window.__env || {};
 
 // Create a promise that resolves when config is ready
-let resolveEnvReady;
-export const envReady = new Promise(resolve => {
+let resolveEnvReady, rejectEnvReady;
+export const envReady = new Promise((resolve, reject) => {
     resolveEnvReady = resolve;
+    rejectEnvReady = reject;
 });
 
 // Get an environment variable
@@ -25,7 +26,10 @@ export function getFirebaseConfig() {
 
     const missingKeys = requiredKeys.filter(key => !window.__env[key]);
     if (missingKeys.length > 0) {
-        throw new Error(`Missing required Firebase configuration: ${missingKeys.join(', ')}`);
+        const error = new Error(`Missing required Firebase configuration: ${missingKeys.join(', ')}`);
+        console.error(error);
+        console.log('Current environment variables:', Object.keys(window.__env));
+        throw error;
     }
 
     return {
@@ -39,28 +43,42 @@ export function getFirebaseConfig() {
     };
 }
 
-// Fetch environment variables from Cloudflare Pages
+// Fetch environment variables from Cloudflare Function
 async function fetchEnvironmentVariables() {
     try {
-        console.log('Fetching environment variables from /env...');
-        const response = await fetch('/env');
+        console.log('Fetching environment variables from functions/env...');
+        const response = await fetch('/functions/env');
+        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const envVars = await response.json();
         console.log('Successfully fetched environment variables. Available keys:', Object.keys(envVars).join(', '));
+        
+        if (Object.keys(envVars).length === 0) {
+            throw new Error('No environment variables returned from /functions/env');
+        }
         
         // Update window.__env with fetched variables
         Object.assign(window.__env, envVars);
         
-        // Resolve the envReady promise
-        resolveEnvReady(window.__env);
+        // Try to validate Firebase config
+        try {
+            getFirebaseConfig();
+            console.log('Firebase configuration validated successfully');
+            resolveEnvReady(window.__env);
+        } catch (error) {
+            console.error('Firebase configuration validation failed:', error.message);
+            rejectEnvReady(error);
+        }
     } catch (error) {
         console.error('Error fetching environment variables:', error);
-        // If fetch fails, try to proceed with any variables we might have from config.js
-        resolveEnvReady(window.__env);
+        console.log('Current environment:', window.__env);
+        rejectEnvReady(error);
     }
 }
 
 // Initialize by fetching environment variables
+console.log('Starting environment variable fetch...');
 fetchEnvironmentVariables();

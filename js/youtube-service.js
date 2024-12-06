@@ -1,4 +1,3 @@
-import { getEnvVar } from './env-config.js';
 import { getValue } from './firebase-config.js';
 
 const CHANNEL_ID = 'UCH3GQ7cC1gvTSEbTSg2jW3Q';  // Fixed channel ID

@@ -21,21 +21,30 @@ async function initializeFirebase() {
         
         // Wait for environment variables to be ready
         console.log('Waiting for environment variables...');
-        await envReady;
-        console.log('Environment variables ready');
+        try {
+            await envReady;
+            console.log('Environment variables ready');
+        } catch (error) {
+            console.error('Failed to load environment variables:', error);
+            throw new Error('Cannot initialize Firebase: environment variables failed to load');
+        }
         
         // Initialize Firebase with error handling
-        const firebaseConfig = getFirebaseConfig();
-        if (!firebaseConfig.apiKey) {
-            throw new Error('Firebase API key is missing. Check Cloudflare Pages environment variables at /env endpoint.');
+        let firebaseConfig;
+        try {
+            firebaseConfig = getFirebaseConfig();
+            console.log('Got Firebase config:', {
+                projectId: firebaseConfig.projectId,
+                hasApiKey: !!firebaseConfig.apiKey,
+                authDomain: firebaseConfig.authDomain
+            });
+        } catch (error) {
+            console.error('Failed to get Firebase config:', error);
+            throw new Error('Cannot initialize Firebase: invalid configuration');
         }
-        console.log('Initializing Firebase with configuration:', {
-            projectId: firebaseConfig.projectId,
-            hasApiKey: !!firebaseConfig.apiKey,
-            authDomain: firebaseConfig.authDomain
-        });
         
         app = initializeApp(firebaseConfig);
+        console.log('Firebase app initialized');
         
         // Initialize optional Firebase features
         if (firebaseConfig.measurementId) {
@@ -60,13 +69,15 @@ async function initializeFirebase() {
         
         // Fetch and activate Remote Config
         await fetchAndActivate(remoteConfig);
+        console.log('Remote Config initialized and activated');
         remoteConfigInitialized = true;
-        console.log('Remote Config initialized and fetched');
         
         configInitialized = true;
-        console.log('Firebase initialization successful');
+        console.log('Firebase initialization complete');
     } catch (error) {
-        console.error('Error initializing Firebase:', error);
+        console.error('Firebase initialization failed:', error);
+        configInitialized = false;
+        remoteConfigInitialized = false;
         throw error;
     }
 }
