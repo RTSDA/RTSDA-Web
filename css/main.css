@@ -3414,6 +3414,13 @@ html.no-csstransitions .hero-content {
   background-image: url(../images/ministries.webp);
 }
 
+.page-header--livestream {
+  background-image: url(../images/2ndcoming.webp);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
 .page-header__content {
   position: relative;
 }
