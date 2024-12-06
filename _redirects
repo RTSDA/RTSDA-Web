@@ -1,3 +1,6 @@
+# Block access to old env-loader.js
+/js/env-loader.js    /js/env-config.js          301!
+
 # Handle specific page routes first
 /about                /about.html                200!
 /contact             /contact.html               200!
