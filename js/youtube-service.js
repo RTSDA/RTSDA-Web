@@ -60,19 +60,25 @@ class YouTubeService {
 
     async getApiKey() {
         try {
+            console.log('Getting YouTube API key...');
+            
             // Try Remote Config first
-            const youtubeApiKey = getValue('youtube_api_key');
+            console.log('Trying to get YouTube API key from Remote Config...');
+            const youtubeApiKey = await getValue('youtube_api_key');
             if (youtubeApiKey) {
+                console.log('Successfully got YouTube API key from Remote Config');
                 return youtubeApiKey;
             }
 
             // Fallback to environment variable
-            const envApiKey = getEnvVar('YOUTUBE_API_KEY');
+            console.log('Remote Config key not found, trying environment variable...');
+            const envApiKey = await getEnvVar('YOUTUBE_API_KEY');
             if (envApiKey) {
+                console.log('Successfully got YouTube API key from environment variable');
                 return envApiKey;
             }
 
-            throw new Error('YouTube API key not found');
+            throw new Error('YouTube API key not found in Remote Config or environment variables');
         } catch (error) {
             console.error('Error getting YouTube API key:', error);
             throw error;

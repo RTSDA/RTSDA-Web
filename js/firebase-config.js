@@ -24,7 +24,10 @@ function getFirebaseConfig() {
     // Required Firebase configuration fields
     const requiredFields = [
         'FIREBASE_API_KEY',
+        'FIREBASE_AUTH_DOMAIN',
         'FIREBASE_PROJECT_ID',
+        'FIREBASE_STORAGE_BUCKET',
+        'FIREBASE_MESSAGING_SENDER_ID',
         'FIREBASE_APP_ID'
     ];
 
@@ -37,8 +40,12 @@ function getFirebaseConfig() {
     // Return Firebase configuration object
     return {
         apiKey: env.FIREBASE_API_KEY,
+        authDomain: env.FIREBASE_AUTH_DOMAIN,
         projectId: env.FIREBASE_PROJECT_ID,
+        storageBucket: env.FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID,
         appId: env.FIREBASE_APP_ID,
+        measurementId: env.FIREBASE_MEASUREMENT_ID
     };
 }
 
@@ -49,7 +56,7 @@ async function initializeFirebase() {
         
         // Wait for environment variables to be ready
         console.log('Waiting for environment variables...');
-        await window.__envReady;
+        await envReady;
         console.log('Environment variables ready:', {
             hasFirebaseConfig: Object.keys(getFirebaseConfig()).length > 0,
             envVars: Object.keys(window.__env || {})
@@ -103,6 +110,8 @@ async function initializeFirebase() {
                 if (error.code) console.error('Error code:', error.code);
                 if (error.message) console.error('Error message:', error.message);
             }
+
+            remoteConfigInitialized = true;
         } catch (configError) {
             console.error('Error with Remote Config:', configError);
             if (configError.code) console.error('Error code:', configError.code);
@@ -116,7 +125,6 @@ async function initializeFirebase() {
         auth = getAuth(app);
         console.log('Auth initialized');
 
-        remoteConfigInitialized = true;
         configInitialized = true;
 
         return { app, db, remoteConfig };
@@ -131,13 +139,28 @@ async function initializeFirebase() {
 // Helper function to get config values
 async function getValue(key) {
     try {
+        // Wait for Firebase initialization
+        if (!configInitialized) {
+            console.log('Waiting for Firebase initialization...');
+            await new Promise(resolve => {
+                const checkInit = () => {
+                    if (configInitialized) {
+                        resolve();
+                    } else {
+                        setTimeout(checkInit, 100);
+                    }
+                };
+                checkInit();
+            });
+        }
+
         // Check if the key is in the cache
         if (key && typeof key === 'string' && cachedConfig[key]) {
             return cachedConfig[key];
         }
 
         // If not in cache and Remote Config is initialized, try to get from Remote Config
-        if (remoteConfig) {
+        if (remoteConfigInitialized && remoteConfig) {
             const value = getRemoteConfigValue(remoteConfig, key);
             if (value) {
                 // Cache the value
