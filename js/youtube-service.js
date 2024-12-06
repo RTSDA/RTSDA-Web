@@ -32,21 +32,13 @@ class YouTubeService {
 
             // Initialize Firebase
             console.log('YouTubeService: Initializing Firebase...');
-            const app = await initializeFirebase();
+            await initializeFirebase();
             console.log('YouTubeService: Firebase initialized');
 
-            // Initialize Remote Config
-            console.log('YouTubeService: Initializing Remote Config...');
-            this.remoteConfig = getRemoteConfig(app);
-            this.remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
-            this.remoteConfig.settings.fetchTimeoutMillis = 60000; // 1 minute
-            
-            try {
-                await fetchAndActivate(this.remoteConfig);
-                console.log('YouTubeService: Remote Config initialized');
-            } catch (error) {
-                console.error('YouTubeService: Error initializing Remote Config:', error);
-            }
+            // Get Remote Config instance (already initialized by firebase-config.js)
+            console.log('YouTubeService: Getting Remote Config instance...');
+            this.remoteConfig = getRemoteConfig();
+            console.log('YouTubeService: Remote Config instance retrieved');
 
             // Try to load cache from localStorage
             const savedCache = localStorage.getItem('youtubeCache');

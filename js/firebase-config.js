@@ -13,6 +13,9 @@ let remoteConfig;
 let configInitialized = false;
 let remoteConfigInitialized = false;
 
+// Initialize promise to track Firebase initialization
+let firebaseInitPromise = null;
+
 // Get Firebase configuration from environment variables
 function getFirebaseConfig() {
     const config = {
@@ -39,51 +42,72 @@ function getFirebaseConfig() {
 
 // Initialize Firebase and all services
 export async function initializeFirebase() {
-    try {
-        // If already initialized, return the app
-        if (app) {
-            return app;
-        }
-
-        // Wait for environment variables
-        await envReady;
-        
-        // Get Firebase config
-        const firebaseConfig = getFirebaseConfig();
-        
-        // Initialize Firebase app
-        app = initializeApp(firebaseConfig);
-        
-        // Initialize Firestore
-        db = getFirestore(app);
-        
-        // Initialize Auth
-        auth = getAuth(app);
-        
-        // Initialize Analytics if we have measurementId
-        if (firebaseConfig.measurementId) {
-            const analytics = getAnalytics(app);
-        }
-        
-        // Initialize Remote Config
-        remoteConfig = getRemoteConfig(app);
-        remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
-        remoteConfig.settings.fetchTimeoutMillis = 60000; // 1 minute
-        
-        try {
-            await fetchAndActivate(remoteConfig);
-            remoteConfigInitialized = true;
-        } catch (error) {
-            console.error('Error initializing remote config:', error);
-            // Don't throw here, as we can still proceed without remote config
-        }
-        
-        configInitialized = true;
-        return app;
-    } catch (error) {
-        console.error('Error initializing Firebase:', error);
-        throw error;
+    // If already initialized or initializing, return the promise
+    if (firebaseInitPromise) {
+        return firebaseInitPromise;
     }
+
+    // Create a new initialization promise
+    firebaseInitPromise = (async () => {
+        try {
+            console.log('firebase-config.js: Waiting for environment variables...');
+            await envReady;
+            console.log('firebase-config.js: Environment variables loaded, getting Firebase config...');
+            
+            const config = getFirebaseConfig();
+            console.log('firebase-config.js: Got Firebase config, initializing app...');
+
+            // Initialize Firebase app if not already initialized
+            if (!app) {
+                app = initializeApp(config);
+                console.log('firebase-config.js: Firebase app initialized');
+            }
+
+            // Initialize Firestore if not already initialized
+            if (!db) {
+                db = getFirestore(app);
+                console.log('firebase-config.js: Firestore initialized');
+            }
+
+            // Initialize Auth if not already initialized
+            if (!auth) {
+                auth = getAuth(app);
+                console.log('firebase-config.js: Auth initialized');
+            }
+
+            // Initialize Remote Config if not already initialized
+            if (!remoteConfig) {
+                remoteConfig = getRemoteConfig();  // Don't pass app - it's automatically used
+                remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
+                remoteConfig.settings.fetchTimeoutMillis = 60000; // 1 minute
+                console.log('firebase-config.js: Remote Config initialized');
+                
+                try {
+                    await fetchAndActivate(remoteConfig);
+                    remoteConfigInitialized = true;
+                    console.log('firebase-config.js: Remote Config activated');
+                } catch (error) {
+                    console.error('firebase-config.js: Error activating Remote Config:', error);
+                }
+            }
+
+            // Initialize Analytics if measurementId is provided
+            if (config.measurementId) {
+                getAnalytics(app);
+                console.log('firebase-config.js: Analytics initialized');
+            }
+
+            configInitialized = true;
+            console.log('firebase-config.js: All Firebase services initialized successfully');
+            return app;
+        } catch (error) {
+            console.error('firebase-config.js: Error initializing Firebase:', error);
+            firebaseInitPromise = null;  // Reset the promise so we can try again
+            throw error;
+        }
+    })();
+
+    return firebaseInitPromise;
 }
 
 // Get a value from Remote Config
@@ -103,7 +127,7 @@ export function getValue(key) {
 }
 
 // Create a service class to match Android implementation
-class PrayerRequestService {
+export class PrayerRequestService {
     constructor() {
         if (!db) throw new Error('Firebase must be initialized before using PrayerRequestService');
         this.collection = collection(db, "prayerRequests");
@@ -138,4 +162,4 @@ class PrayerRequestService {
     }
 }
 
-export { db, auth, PrayerRequestService, getRemoteConfig };
+export { db, auth, getRemoteConfig };
