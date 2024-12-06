@@ -26,7 +26,7 @@ if [ -n "$MISSING_VARS" ]; then
 fi
 
 # Generate the environment configuration for Cloudflare Pages
-cat > config.js << EOL
+cat > js/config.js << EOL
 // Cloudflare Pages environment configuration
 window.__env = {
     FIREBASE_API_KEY: '${FIREBASE_API_KEY}',
@@ -47,7 +47,7 @@ console.log('Environment configuration loaded at:', new Date().toISOString());
 console.log('Available configuration keys:', Object.keys(window.__env).join(', '));
 EOL
 
-echo "Config file generated successfully"
+echo "Config file generated successfully in js/config.js"
 
 # Clean up any sensitive files and development artifacts
 rm -rf .git
