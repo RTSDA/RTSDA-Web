@@ -1,15 +1,29 @@
-import { createRequestHandler } from '@cloudflare/next-on-pages';
+export default {
+  async fetch(request, env, ctx) {
+    try {
+      // Get the static assets from KV or serve the app
+      const url = new URL(request.url);
+      
+      // Handle API routes
+      if (url.pathname.startsWith('/api/')) {
+        // TODO: Implement API routes
+        return new Response('API not implemented', { status: 501 });
+      }
 
-export default createRequestHandler({
-  // Required: Provide the build output directory that contains your built Next.js application
-  buildOutputDirectory: '.next',
-  
-  // Optional: Customize how assets are served
-  assetPrefix: '/_next',
-  
-  // Optional: Provide custom error handling
-  onError: (error, request) => {
-    console.error('Next.js Error:', error);
-    return new Response('Internal Server Error', { status: 500 });
+      // Serve static files
+      if (url.pathname.startsWith('/_next/') || url.pathname.includes('.')) {
+        const response = await fetch(request);
+        if (response.ok) {
+          return response;
+        }
+      }
+
+      // Default: serve the app
+      const response = await fetch(request);
+      return response;
+    } catch (error) {
+      console.error('Worker Error:', error);
+      return new Response('Internal Server Error', { status: 500 });
+    }
   }
-});
+};
