@@ -5,7 +5,20 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { sermonService, type Sermon } from '@/services/SermonService';
 
-const ministries = [
+type MinistryLink = {
+  text: string;
+  url: string;
+  icon?: React.ReactNode;
+};
+
+type Ministry = {
+  name: string;
+  description: string;
+  imageUrl: string;
+  links: MinistryLink[];
+};
+
+const ministries: Ministry[] = [
   {
     name: 'Prayer Ministry',
     description:
@@ -200,7 +213,7 @@ export default function MinistriesPage() {
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
-                {ministry.links.map((link, index) => (
+                {ministry.links.map((link: MinistryLink, index) => (
                   <a
                     key={index}
                     href={link.url}

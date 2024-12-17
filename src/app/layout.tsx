@@ -9,6 +9,22 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Rockville-Tolland SDA Church',
   description: 'Welcome to Rockville-Tolland SDA Church',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: '#ffffff',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'RTSDA Church',
+  },
+  formatDetection: {
+    telephone: true,
+  },
 }
 
 export default function RootLayout({
