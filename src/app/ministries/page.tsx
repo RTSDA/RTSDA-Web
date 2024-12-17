@@ -118,8 +118,8 @@ export default function MinistriesPage() {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8 text-center">Our Ministries</h1>
+    <div className="container mx-auto px-4 pt-20 pb-8">
+      <h1 className="text-4xl font-bold mb-16 text-center">Our Ministries</h1>
 
       {/* Latest Sermon Section */}
       <div className="mb-12">

@@ -1,27 +1,51 @@
-// @ts-check
+import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
+import { fetch } from '@whatwg-node/fetch'
+
 export default {
   async fetch(request, env, ctx) {
     try {
-      const url = new URL(request.url);
+      const url = new URL(request.url)
       
-      // Handle API routes
-      if (url.pathname.startsWith('/api/')) {
-        const response = await fetch(request);
-        if (!response.ok) {
-          return new Response('API Error', { status: response.status });
+      // First try to get a static asset
+      try {
+        return await getAssetFromKV(
+          {
+            request,
+            waitUntil: ctx.waitUntil.bind(ctx),
+          },
+          {
+            ASSET_NAMESPACE: env.__STATIC_CONTENT,
+            ASSET_MANIFEST: env.__STATIC_CONTENT_MANIFEST,
+          },
+        )
+      } catch (e) {
+        // If it's not a static asset, continue to API routes
+        if (!(e instanceof NotFoundError)) {
+          throw e
         }
-        return response;
       }
 
-      // Serve static files and the app
-      const response = await fetch(request);
-      if (!response.ok) {
-        return new Response('Not Found', { status: 404 });
+      // Handle API routes
+      if (url.pathname.startsWith('/api/')) {
+        return fetch(request)
       }
-      return response;
+
+      // Try to get the page as a static asset again (for client-side navigation)
+      return await getAssetFromKV(
+        {
+          request: new Request(new URL(request.url + '.html'), request),
+          waitUntil: ctx.waitUntil.bind(ctx),
+        },
+        {
+          ASSET_NAMESPACE: env.__STATIC_CONTENT,
+          ASSET_MANIFEST: env.__STATIC_CONTENT_MANIFEST,
+        },
+      )
     } catch (e) {
-      console.error('Worker Error:', e);
-      return new Response('Internal Error: ' + e.message, { status: 500 });
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
   }
-};
+}

@@ -2,13 +2,18 @@
   "version": 1,
   "include": ["/*"],
   "exclude": [
-    "/_next/static/*",
-    "/static/*",
     "/api/*",
-    "/_next/*",
     "/favicon.ico"
   ],
   "headers": {
+    "/_next/static/chunks/*.js": {
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Type": "application/javascript"
+    },
+    "/_next/static/css/*": {
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Type": "text/css"
+    },
     "/_next/static/*": {
       "Cache-Control": "public, max-age=31536000, immutable",
       "Content-Type": {
@@ -19,7 +24,7 @@
         ".png": "image/png",
         ".gif": "image/gif",
         ".ico": "image/x-icon",
-        ".webp": "image/webp"
+        ".svg": "image/svg+xml"
       }
     }
   }

@@ -1,0 +1,9 @@
+[build]
+command = "npm run build"
+output = ".next"
+
+[site]
+bucket = ".next"
+
+[env.production]
+vars = { ENVIRONMENT = "production" }

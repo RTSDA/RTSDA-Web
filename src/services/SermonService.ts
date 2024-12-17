@@ -115,6 +115,8 @@ class SermonService {
       // Sort years in descending order
       const sortedYears = [...years].sort((a, b) => b.localeCompare(a));
       
+      let allSermons: Sermon[] = [];
+      
       for (const year of sortedYears) {
         // Get months for each year
         const months = await this.fetchMonths(year);
@@ -124,19 +126,27 @@ class SermonService {
         // Sort months in descending order (most recent first)
         const sortedMonths = [...months].sort((a, b) => b.localeCompare(a));
 
-        // Try each month until we find sermons
+        // Get sermons for each month
         for (const month of sortedMonths) {
           const sermons = await this.fetchSermons(year, month);
           if (sermons.length > 0) {
-            console.log(`📚 Found ${sermons.length} sermons for ${year}/${month}`, sermons);
-            return sermons;
+            console.log(`📚 Found ${sermons.length} sermons for ${year}/${month}`);
+            allSermons = [...allSermons, ...sermons];
+          } else {
+            console.log(`No sermons found for ${year}/${month}`);
           }
-          console.log(`No sermons found for ${year}/${month}`);
         }
       }
 
-      console.log('❌ No sermons found in any available months');
-      return [];
+      // Sort all sermons by date
+      allSermons.sort((a: Sermon, b: Sermon) => {
+        const dateA = this.parseDateFromString(a.date);
+        const dateB = this.parseDateFromString(b.date);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      console.log(`📚 Total sermons found: ${allSermons.length}`);
+      return allSermons;
     } catch (error) {
       console.error('❌ Error fetching sermons:', error);
       return [];

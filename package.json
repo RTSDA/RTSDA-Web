@@ -11,7 +11,9 @@
     "deploy": "npx wrangler deploy",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "upload-assets": "node upload-assets.js",
+    "deploy": "npm run build && npm run upload-assets && wrangler deploy public/_worker.js"
   },
   "dependencies": {
     "@cloudflare/kv-asset-handler": "^0.3.4",
@@ -27,6 +29,7 @@
     "@whatwg-node/fetch": "^0.10.1",
     "add-to-calendar-button-react": "^2.7.3",
     "clsx": "^2.1.0",
+    "critters": "^0.0.23",
     "firebase": "^10.7.1",
     "framer-motion": "^10.18.0",
     "lodash": "^4.17.21",
