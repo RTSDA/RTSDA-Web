@@ -24,6 +24,7 @@ export async function GET(
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching months:', error);
-    return NextResponse.json({ error: 'Failed to fetch months' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: 'Failed to fetch months', details: errorMessage }, { status: 500 });
   }
 }

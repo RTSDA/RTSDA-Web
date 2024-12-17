@@ -23,6 +23,7 @@ export async function GET() {
     return NextResponse.json(data);
   } catch (error) {
     console.error('❌ Error fetching years:', error);
-    return NextResponse.json({ error: 'Failed to fetch years', details: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: 'Failed to fetch years', details: errorMessage }, { status: 500 });
   }
 }
