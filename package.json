@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npx @cloudflare/next-on-pages",
+    "build": "next build",
+    "pages:build": "npx wrangler pages deploy .next",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate"
