@@ -8,3 +8,6 @@ cwd = "."
 
 [site]
 bucket = ".next"
+
+[pages]
+pages_build_output_dir = ".next"
