@@ -5,10 +5,10 @@ compatibility_flags = ["nodejs_compat"]
 
 [build]
 command = "npm run build"
-output_directory = ".next"
+output_directory = ".vercel/output/static"
 
 [site]
-bucket = ".next"
+bucket = ".vercel/output/static"
 exclude = [".wrangler/**/*"]
 
 # Configure MIME types for static files

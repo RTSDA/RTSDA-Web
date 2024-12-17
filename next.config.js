@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
+  distDir: '.vercel/output/static',
   reactStrictMode: true,
-  output: 'standalone',
   images: {
     unoptimized: true,
   },
@@ -23,6 +24,25 @@ const nextConfig = {
       config.output.globalObject = 'self'
       config.output.publicPath = '/_next/'
     }
+    // Split chunks into smaller sizes
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: 'all',
+        maxSize: 20000000, // 20MB to be safe
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name(module) {
+              const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+              return `vendor.${packageName.replace('@', '')}`;
+            },
+          },
+        },
+      },
+    };
+
+    // Configure output
     config.output.assetModuleFilename = `static/[hash][ext]`;
     config.output.publicPath = `/_next/`;
     return config
