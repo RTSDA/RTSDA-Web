@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'RTSDA Church',
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
   formatDetection: {
     telephone: true,
   },
@@ -40,6 +43,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className={inter.className}>
         <Navbar />
