@@ -1,4 +1,4 @@
-import { createRequestHandler } from '@cloudflare/next-on-pages/edge';
+import { createRequestHandler } from '@cloudflare/next-on-pages';
 
 export default createRequestHandler({
   // Required: Provide the build output directory that contains your built Next.js application
