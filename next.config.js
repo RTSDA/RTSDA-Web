@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  distDir: '.next', // Match wrangler.toml
+  distDir: '.vercel/output/static', // Match Cloudflare Pages build output directory
   images: {
     unoptimized: true,
   },
