@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: 'Rockville-Tolland SDA Church',
   description: 'Welcome to Rockville-Tolland SDA Church',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.ico',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -35,6 +38,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
       <body className={inter.className}>
         <Navbar />
         <main className="min-h-screen pt-16">

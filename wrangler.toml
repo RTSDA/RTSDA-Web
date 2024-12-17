@@ -1,5 +1,5 @@
 name = "rtsda-web"
-compatibility_date = "2023-12-01"
+compatibility_date = "2024-11-26"
 compatibility_flags = ["nodejs_compat"]
 
 [build]
@@ -10,3 +10,24 @@ format = "directory"
 
 [site]
 bucket = ".vercel/output/static"
+
+[[rules]]
+type = "Rule"
+glob = "/*"
+fallthrough = true
+
+[[rules]]
+type = "Rule"
+glob = "/_next/*"
+cache_key = "next-static"
+[rules.cache]
+browser_ttl = 31536000
+edge_ttl = 31536000
+
+[[rules]]
+type = "Rule"
+glob = "/static/*"
+cache_key = "static-assets"
+[rules.cache]
+browser_ttl = 31536000
+edge_ttl = 31536000

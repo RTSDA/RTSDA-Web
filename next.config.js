@@ -10,8 +10,11 @@ const nextConfig = {
   swcMinify: true,
   output: 'export',
   distDir: '.vercel/output/static',
-  assetPrefix: '/',
+  assetPrefix: '',
   trailingSlash: true,
+  generateEtags: false,
+  poweredByHeader: false,
+  // Trigger rebuild after setting nodejs_compat in Cloudflare Dashboard
 }
 
 module.exports = nextConfig
