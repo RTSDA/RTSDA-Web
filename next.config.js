@@ -8,9 +8,6 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   swcMinify: true,
-  experimental: {
-    optimizeCss: true,
-  },
   output: 'export',
   distDir: '.vercel/output/static',
   assetPrefix: '/',
