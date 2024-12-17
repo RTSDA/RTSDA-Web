@@ -7,8 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "pages:build": "npx @cloudflare/next-on-pages@1",
+    "build": "@cloudflare/next-on-pages",
     "start": "next start",
     "lint": "next lint"
   },
@@ -26,7 +25,6 @@
     "framer-motion": "^10.18.0",
     "lodash": "^4.17.21",
     "next": "^14.2.20",
-    "next-auth": "^4.24.5",
     "nodemailer": "^6.9.16",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
