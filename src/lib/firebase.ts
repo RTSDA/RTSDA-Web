@@ -14,10 +14,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let app;
-let db;
-let auth;
-let analytics;
+let app: any;
+let db: any;
+let auth: any;
+let analytics: any;
 
 if (typeof window !== 'undefined') {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
