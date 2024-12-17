@@ -23,6 +23,10 @@ const nextConfig = {
           key: 'Content-Type',
           value: 'text/css',
         },
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
       ],
     },
     {
@@ -32,9 +36,32 @@ const nextConfig = {
           key: 'Content-Type',
           value: 'application/javascript',
         },
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
+    {
+      source: '/_next/static/media/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
       ],
     },
   ],
+  // Ensure proper static file serving
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
+    }
+    return config;
+  },
 }
 
 module.exports = nextConfig
