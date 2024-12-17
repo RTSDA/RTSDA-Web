@@ -1,13 +1,10 @@
 name = "rtsda-web"
+main = "worker/index.js"
 compatibility_date = "2023-12-01"
 compatibility_flags = ["nodejs_compat"]
 
 [build]
 command = "npm run build"
-cwd = "."
 
-[site]
-bucket = ".next"
-
-[pages]
-pages_build_output_dir = ".next"
+[env.production]
+vars = { ENVIRONMENT = "production" }
