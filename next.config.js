@@ -5,10 +5,16 @@ const nextConfig = {
     unoptimized: true,
   },
   typescript: {
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
     ignoreBuildErrors: true,
   },
+  swcMinify: true,
+  experimental: {
+    optimizeCss: true,
+  },
+  output: 'export',
+  distDir: '.vercel/output/static',
+  assetPrefix: '/',
+  trailingSlash: true,
 }
 
 module.exports = nextConfig
