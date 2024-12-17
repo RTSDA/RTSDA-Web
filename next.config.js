@@ -24,7 +24,7 @@ const nextConfig = {
       config.output.globalObject = 'self'
       config.output.publicPath = '/_next/'
     }
-    // Split chunks into smaller sizes
+    // Split chunks into smaller sizes for Cloudflare's 25MB limit
     config.optimization = {
       ...config.optimization,
       splitChunks: {
