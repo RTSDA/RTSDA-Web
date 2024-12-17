@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  output: 'standalone',
   images: {
     unoptimized: true,
   },
@@ -8,8 +9,6 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   swcMinify: true,
-  output: 'export',
-  distDir: '.vercel/output/static',
   assetPrefix: '',
   trailingSlash: true,
   generateEtags: false,
@@ -24,6 +23,8 @@ const nextConfig = {
       config.output.globalObject = 'self'
       config.output.publicPath = '/_next/'
     }
+    config.output.assetModuleFilename = `static/[hash][ext]`;
+    config.output.publicPath = `/_next/`;
     return config
   },
 }
