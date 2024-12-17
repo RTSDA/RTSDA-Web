@@ -16,20 +16,26 @@ format = "directory"
 
 [[build.upload.rules]]
 type = "CompiledJavaScript"
-globs = ["**/*.js"]
-fallthrough = true
+globs = ["**/*.js", "**/_next/static/chunks/*.js"]
+fallthrough = false
 
 [[build.upload.rules]]
 type = "CompiledCSS"
 globs = ["**/*.css"]
-fallthrough = true
+fallthrough = false
 
 [[build.upload.rules]]
 type = "Text"
 globs = ["**/*.{html,txt,json}"]
-fallthrough = true
+fallthrough = false
 
 [[build.upload.rules]]
 type = "Binary"
 globs = ["**/*.{woff,woff2,ttf,otf,eot,png,jpg,jpeg,gif,ico,webp}"]
+fallthrough = false
+
+# Ensure all other files are handled
+[[build.upload.rules]]
+type = "Text"
+globs = ["**/*"]
 fallthrough = true
