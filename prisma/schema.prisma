@@ -1,0 +1,21 @@
+// This is your Prisma schema file
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model ContactSubmission {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  message   String
+  status    String   @default("pending") // pending, sent, failed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

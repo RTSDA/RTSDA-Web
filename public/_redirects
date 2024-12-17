@@ -1,0 +1,8 @@
+# Redirect domain aliases to primary domain
+https://rockvilletollandsda.church/* https://www.rockvilletollandsda.church/:splat 301!
+
+# Optional: Redirect www to non-www
+# https://www.rockvilletollandsda.church/* https://rockvilletollandsda.church/:splat 301!
+
+# Handle 404s
+/* /404.html 404
