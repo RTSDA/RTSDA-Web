@@ -4,45 +4,9 @@ compatibility_date = "2023-12-16"
 compatibility_flags = ["nodejs_compat"]
 
 [build]
-command = "npm run build"
-output_directory = ".vercel/output/static"
+command = "npx @cloudflare/next-on-pages@1"
+pages_build_output_dir = ".next"
 
 [site]
-bucket = ".vercel/output/static"
+bucket = ".next"
 exclude = [".wrangler/**/*"]
-
-# Configure MIME types for static files
-[build.upload]
-format = "directory"
-
-# Handle JavaScript files first
-[[build.upload.rules]]
-type = "Text"
-globs = ["**/_next/static/chunks/*.js", "**/*.js", "**/gtag/js*"]
-[build.upload.rules.custom]
-content_type = "application/javascript; charset=utf-8"
-
-# Handle other file types
-[[build.upload.rules]]
-type = "CompiledCSS"
-globs = ["**/*.css"]
-fallthrough = true
-
-[[build.upload.rules]]
-type = "Text"
-globs = ["**/*.{html,txt,json}"]
-fallthrough = true
-
-[[build.upload.rules]]
-type = "Binary"
-globs = ["**/*.{woff,woff2,ttf,otf,eot,png,jpg,jpeg,gif,ico,webp}"]
-fallthrough = true
-
-# Final catch-all rule
-[[build.upload.rules]]
-type = "Text"
-globs = ["**/*"]
-fallthrough = true
-
-[build.upload.rules.exclude]
-globs = [".wrangler/**/*"]
