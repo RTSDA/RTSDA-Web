@@ -1,3 +1,4 @@
+# Cloudflare Pages config
 name = "rtsda-web"
 compatibility_date = "2023-12-16"
 compatibility_flags = ["nodejs_compat"]
@@ -6,56 +7,29 @@ compatibility_flags = ["nodejs_compat"]
 command = "npm run build"
 output_directory = ".vercel/output/static"
 
-[build.upload]
-format = "directory"
-
 [site]
 bucket = ".vercel/output/static"
 
-[[rules]]
-type = "mime"
-glob = "**/*.js"
-content_type = "application/javascript"
+# Configure MIME types for static files
+[build.upload]
+format = "directory"
 
-[[rules]]
-type = "mime"
-glob = "**/*.css"
-content_type = "text/css"
-
-[[rules]]
-type = "mime"
-glob = "**/*.html"
-content_type = "text/html; charset=utf-8"
-
-[[rules]]
-type = "header"
-glob = "/_next/static/**/*"
-[rules.headers]
-Cache-Control = "public, max-age=31536000, immutable"
-
-[[rules]]
-type = "header"
-glob = "**/*.{js,css,jpg,jpeg,png,gif,ico,webp,woff2}"
-[rules.headers]
-Cache-Control = "public, max-age=31536000, immutable"
-
-[[rules]]
-type = "Rule"
-glob = "/*"
+[[build.upload.rules]]
+type = "CompiledJavaScript"
+globs = ["**/*.js"]
 fallthrough = true
 
-[[rules]]
-type = "Rule"
-glob = "/_next/*"
-cache_key = "next-static"
-[rules.cache]
-browser_ttl = 31536000
-edge_ttl = 31536000
+[[build.upload.rules]]
+type = "CompiledCSS"
+globs = ["**/*.css"]
+fallthrough = true
 
-[[rules]]
-type = "Rule"
-glob = "/static/*"
-cache_key = "static-assets"
-[rules.cache]
-browser_ttl = 31536000
-edge_ttl = 31536000
+[[build.upload.rules]]
+type = "Text"
+globs = ["**/*.{html,txt,json}"]
+fallthrough = true
+
+[[build.upload.rules]]
+type = "Binary"
+globs = ["**/*.{woff,woff2,ttf,otf,eot,png,jpg,jpeg,gif,ico,webp}"]
+fallthrough = true

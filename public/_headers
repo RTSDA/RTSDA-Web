@@ -2,18 +2,15 @@
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Cache-Control: public, max-age=0, must-revalidate
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
 
 /_next/static/css/*
   Content-Type: text/css
-  Cache-Control: public, max-age=31536000, immutable
+
+/_next/static/js/*
+  Content-Type: application/javascript
 
 /_next/static/media/*
-  Cache-Control: public, max-age=31536000, immutable
-
-/_next/static/chunks/*
-  Content-Type: application/javascript
-  Cache-Control: public, max-age=31536000, immutable
-
-/_next/static/*
   Cache-Control: public, max-age=31536000, immutable

@@ -14,53 +14,17 @@ const nextConfig = {
   trailingSlash: true,
   generateEtags: false,
   poweredByHeader: false,
-  // Configure static file handling
-  headers: async () => [
-    {
-      source: '/_next/static/css/:path*',
-      headers: [
-        {
-          key: 'Content-Type',
-          value: 'text/css',
-        },
-        {
-          key: 'Cache-Control',
-          value: 'public, max-age=31536000, immutable',
-        },
-      ],
-    },
-    {
-      source: '/_next/static/js/:path*',
-      headers: [
-        {
-          key: 'Content-Type',
-          value: 'application/javascript',
-        },
-        {
-          key: 'Cache-Control',
-          value: 'public, max-age=31536000, immutable',
-        },
-      ],
-    },
-    {
-      source: '/_next/static/media/:path*',
-      headers: [
-        {
-          key: 'Cache-Control',
-          value: 'public, max-age=31536000, immutable',
-        },
-      ],
-    },
-  ],
-  // Ensure proper static file serving
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      };
+  experimental: {
+    optimizeCss: false,
+    optimizePackageImports: ['@heroicons/react'],
+  },
+  webpack: (config, { dev, isServer }) => {
+    if (!isServer && !dev) {
+      config.output.webassemblyModuleFilename = 'static/wasm/[modulehash].wasm'
+      config.output.globalObject = 'self'
+      config.output.publicPath = '/_next/'
     }
-    return config;
+    return config
   },
 }
 
