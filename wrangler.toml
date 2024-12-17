@@ -1,3 +1,5 @@
 # Cloudflare Pages config
 name = "rtsda-web"
+[build]
+command = "npm run build"
 pages_build_output_dir = ".next"
