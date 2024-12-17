@@ -4,7 +4,7 @@ import { app } from '@/config/firebase';
 class SermonAuthService {
   private static instance: SermonAuthService;
   private token: string | null = null;
-  private remoteConfig;
+  private remoteConfig: ReturnType<typeof getRemoteConfig> | null = null;
 
   private constructor() {
     // Initialize Firebase Remote Config
@@ -12,6 +12,7 @@ class SermonAuthService {
       const remoteConfig = getRemoteConfig(app);
       remoteConfig.settings = {
         minimumFetchIntervalMillis: process.env.NODE_ENV === 'development' ? 0 : 43200000, // 12 hours
+        fetchTimeoutMillis: 60000, // 1 minute timeout
       };
       remoteConfig.defaultConfig = {
         'sermon_key': 'ThyWordisaLamp=4890'
@@ -32,6 +33,11 @@ class SermonAuthService {
       // If we're on the server-side, return the default key
       if (typeof window === 'undefined') {
         this.token = 'ThyWordisaLamp=4890';
+        return;
+      }
+
+      if (!this.remoteConfig) {
+        console.error('Remote config not initialized');
         return;
       }
 

@@ -97,7 +97,7 @@ class SermonService {
     }));
 
     // Sort sermons by date in descending order
-    return sermons.sort((a, b) => {
+    return sermons.sort((a: Sermon, b: Sermon) => {
       const dateA = this.parseDateFromString(a.date);
       const dateB = this.parseDateFromString(b.date);
       return dateB.getTime() - dateA.getTime();
