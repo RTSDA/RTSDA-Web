@@ -15,7 +15,7 @@
         width="1920"
         height="1080"
       />
-      <div class="absolute inset-0 bg-gradient-to-br from-black/90 via-black/50 to-transparent" />
+      <div class="absolute inset-0 bg-gradient-to-br from-black/90 via-black/50 to-transparent"></div>
     </div>
     <div class="relative min-h-screen flex items-center">
       <div class="container-custom">
@@ -26,7 +26,7 @@
           class="max-w-[90%] lg:max-w-[65%] xl:max-w-[55%]"
         >
           <div class="relative">
-            <div class="absolute -left-4 top-0 h-20 w-1 bg-blue-500 transform -skew-y-45" />
+            <div class="absolute -left-4 top-0 h-20 w-1 bg-blue-500 transform -skew-y-45"></div>
             <div class="pl-6">
               <span class="inline-block text-blue-400 text-lg font-medium tracking-wider mb-4">
                 WELCOME TO
@@ -36,7 +36,7 @@
                 <br />
                 <span class="relative">
                   <span class="relative z-10 text-white">SDA Church</span>
-                  <span class="absolute inset-x-0 bottom-2 h-3 bg-blue-500/30 -skew-x-6" />
+                  <span class="absolute inset-x-0 bottom-2 h-3 bg-blue-500/30 -skew-x-6"></span>
                 </span>
               </h1>
               <p class="text-lg md:text-xl text-gray-200 max-w-2xl leading-relaxed mb-12">

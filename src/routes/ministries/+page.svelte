@@ -150,7 +150,7 @@
 
     {#if loading}
       <div class="flex items-center justify-center min-h-[400px]">
-        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     {:else if latestSermon?.jellyfinId}
       <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
