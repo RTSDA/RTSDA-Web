@@ -8,6 +8,7 @@
     { name: 'Home', href: '/' },
     { name: 'About', href: '/about' },
     { name: 'Ministries', href: '/ministries' },
+    { name: 'Sermons', href: '/sermons' },
     { name: 'Events', href: '/events' },
     { name: 'Contact', href: '/contact' },
   ];

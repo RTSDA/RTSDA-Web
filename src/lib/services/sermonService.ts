@@ -298,19 +298,31 @@ class SermonService {
       console.log('Using library ID:', libraryId);
       
       const response = await this.fetchWithAuth(
-        `${JELLYFIN_URL}/Items?ParentId=${libraryId}&Fields=Path,PremiereDate,ProductionYear,Overview,DateCreated&Recursive=true&IncludeItemTypes=Movie,Video,Episode&SortBy=PremiereDate&SortOrder=Descending&Limit=1`
+        `${JELLYFIN_URL}/Items?ParentId=${libraryId}&Fields=Path,PremiereDate,ProductionYear,Overview,DateCreated&Recursive=true&IncludeItemTypes=Movie,Video,Episode&SortBy=PremiereDate&SortOrder=Descending`
       );
       const data = await response.json();
       
       // Restore original type
       this.currentType = originalType;
       
-      if (!data.Items?.[0]) {
-        console.error('No sermon found');
+      if (!data.Items || !Array.isArray(data.Items)) {
+        console.error('No Items array in response:', data);
+        return null;
+      }
+
+      // Filter out items without a Path or wrong type
+      const filteredItems = data.Items.filter((item: JellyfinItem) => {
+        const isSermon = item.Path && (item.Path.toLowerCase().includes('sermon') || item.Path.toLowerCase().includes('sermons'));
+        const hasValidExtension = item.Path && (item.Path.endsWith('.mp4') || item.Path.endsWith('.mov'));
+        return isSermon && hasValidExtension;
+      });
+      
+      if (!filteredItems[0]) {
+        console.error('No sermon found after filtering');
         return null;
       }
       
-      return this.mapJellyfinItemToSermon(data.Items[0]);
+      return this.mapJellyfinItemToSermon(filteredItems[0]);
     } catch (error) {
       console.error('Error fetching latest sermon:', error);
       throw error;
