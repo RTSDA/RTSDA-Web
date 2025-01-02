@@ -66,7 +66,7 @@
                   Stay Updated
                 </h2>
                 <p class="mt-3 text-lg text-gray-600">
-                  Subscribe to our newsletter for the latest events and church activities.
+                  Contact us to stay informed about upcoming events and church activities.
                 </p>
               </div>
               <div class="mt-6 sm:mt-0 sm:ml-6 sm:flex-shrink-0">
@@ -75,7 +75,7 @@
                   class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-all duration-200 hover:shadow-md"
                 >
                   <Bell class="w-5 h-5 mr-2" />
-                  Subscribe Now
+                  Contact Us
                 </a>
               </div>
             </div>

@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { Event } from '$lib/types/event';
   import { Calendar, Clock, MapPin } from 'lucide-svelte';
+  import { createEventDispatcher } from 'svelte';
 
   export let event: Event;
+  const dispatch = createEventDispatcher<{select: Event}>();
 
   function formatDate(date: Date): string {
     return date.toLocaleDateString('en-US', {
@@ -29,24 +31,55 @@
     'Garden Workshop': '/images/garden.webp',
     'End of Year Praise & Prayer Service': '/images/NewYearPrayer.webp',
     'Communion Service': '/images/events/communion.webp',
-    'Divine Service': '/images/events/divine-service.webp',
-    'Default': '/images/events.webp'
+    'Divine Service': '/images/divine-service.webp',
+    'Prophecies of Daniel and Revelation': '/images/daniel.webp',
+    'Church Officer Training': '/images/training.webp',
+    'Default': '/images/hero.webp'
   };
 
   function getEventImage(event: Event): string {
+    console.log('Event Title:', event.title);
+    console.log('Event Type:', event.type);
+    
     if (event.imageUrl) return event.imageUrl;
     if (event.title === 'End of Year Praise & Prayer Service') return '/images/NewYearPrayer.webp';
+    
+    if (event.title.toLowerCase().includes('daniel and revelation')) {
+      console.log('Matched Daniel title');
+      return '/images/daniel.webp';
+    }
+    if (event.title.toLowerCase().includes('church officer training')) {
+      console.log('Matched Training title');
+      return '/images/training.webp';
+    }
     if (event.title.toLowerCase().includes('divine') || 
-        event.title.toLowerCase().includes('worship') || 
-        event.type === 'Divine Service' ||
-        event.type === 'Worship Service') return '/images/events/divine-service.webp';
+        event.title.toLowerCase().includes('worship')) return '/images/divine-service.webp';
     if (event.title.toLowerCase().includes('prayer')) return '/images/events/prayer.webp';
     if (event.title.toLowerCase().includes('communion')) return '/images/events/communion.webp';
-    return imageMap[event.type] || imageMap['Default'];
+    
+    const matchingKey = Object.keys(imageMap).find(key => 
+      event.title.toLowerCase().includes(key.toLowerCase())
+    );
+    if (matchingKey) {
+      return imageMap[matchingKey];
+    }
+    
+    console.log('Using default image');
+    return imageMap['Default'];
+  }
+
+  function handleClick() {
+    dispatch('select', event);
   }
 </script>
 
-<article class="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+<article 
+  class="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
+  on:click={handleClick}
+  on:keydown={(e) => e.key === 'Enter' && handleClick()}
+  role="button"
+  tabindex="0"
+>
   <div class="relative aspect-[16/9]">
     <img
       src={getEventImage(event)}
@@ -80,7 +113,19 @@
       {#if event.location}
         <div class="flex items-center text-gray-600">
           <MapPin class="h-5 w-5 mr-2 flex-shrink-0" />
-          <span>{event.location}</span>
+          {#if event.locationUrl}
+            <a 
+              href={event.locationUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="hover:text-blue-600 hover:underline transition-colors"
+              on:click|stopPropagation
+            >
+              {event.location}
+            </a>
+          {:else}
+            <span>{event.location}</span>
+          {/if}
         </div>
       {/if}
     </div>

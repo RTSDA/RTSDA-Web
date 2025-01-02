@@ -3,11 +3,13 @@
   import { getEvents } from '$lib/services/eventService';
   import type { Event } from '$lib/types/event';
   import EventCard from './EventCard.svelte';
+  import EventModal from './EventModal.svelte';
   import { Calendar } from 'lucide-svelte';
 
   let events: Event[] = [];
   let loading = true;
   let error: string | null = null;
+  let selectedEvent: Event | null = null;
 
   async function loadEvents() {
     try {
@@ -26,6 +28,14 @@
     console.log('EventList: Component mounted');
     loadEvents();
   });
+
+  function handleEventSelect(event: CustomEvent<Event>) {
+    selectedEvent = event.detail;
+  }
+
+  function handleModalClose() {
+    selectedEvent = null;
+  }
 </script>
 
 <div class="relative">
@@ -86,15 +96,20 @@
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">No upcoming events</h3>
         <p class="text-gray-600 max-w-sm mx-auto">
-          Check back later for new events or subscribe to our newsletter to stay updated with the latest activities.
+          Check back later for new events or contact us for more information about upcoming activities.
         </p>
       </div>
     </div>
   {:else}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {#each events as event (event.id)}
-        <EventCard {event} />
+        <EventCard {event} on:select={handleEventSelect} />
       {/each}
     </div>
   {/if}
-</div> 
+</div>
+
+<EventModal 
+  event={selectedEvent} 
+  on:close={handleModalClose} 
+/> 

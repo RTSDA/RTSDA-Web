@@ -5,7 +5,10 @@ export interface Event {
     startDate: Date;
     endDate: Date;
     location: string;
+    locationUrl?: string;
     imageUrl?: string;
+    defaultImageUrl?: string;
+    type?: string;
     isPublished: boolean;
     isDeleted?: boolean;
     recurrenceType?: 'weekly' | 'monthly' | 'none';
