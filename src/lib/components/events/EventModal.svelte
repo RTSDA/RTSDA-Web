@@ -56,7 +56,7 @@
       >
         <!-- Close button -->
         <button
-          class="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+          class="absolute -top-3 -right-3 p-2 rounded-full bg-white shadow-lg hover:bg-gray-50 transition-colors z-10"
           on:click={handleClose}
         >
           <X class="w-6 h-6 text-gray-500" />
@@ -65,6 +65,15 @@
 
         <!-- Content -->
         <div class="p-6 sm:p-8">
+          {#if event.image}
+            <div class="relative aspect-[16/9] mb-6 rounded-lg overflow-hidden">
+              <img
+                src={event.image}
+                alt={event.title}
+                class="absolute inset-0 w-full h-full object-contain bg-gray-100"
+              />
+            </div>
+          {/if}
           <h2 class="text-2xl font-bold text-gray-900 mb-4">{event.title}</h2>
           
           <div class="space-y-4 mb-6">
