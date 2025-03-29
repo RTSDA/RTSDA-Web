@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Menu, X } from 'lucide-svelte';
+  import Menu from 'lucide-svelte/icons/menu';
+  import X from 'lucide-svelte/icons/x';
   import { page } from '$app/stores';
 
   let mobileMenuOpen = false;
@@ -10,13 +11,13 @@
     { name: 'Ministries', href: '/ministries' },
     { name: 'Sermons', href: '/sermons' },
     { name: 'Events', href: '/events' },
+    { name: 'Bulletins', href: '/bulletins' },
     { name: 'Contact', href: '/contact' },
   ];
 
   const quickLinks = [
     { name: 'Online Giving', href: 'https://adventistgiving.org/donate/AN4MJG' },
     { name: 'Live Stream', href: 'https://stream.rockvilletollandsda.church' },
-    { name: 'Bulletin', href: 'https://rtsda.updates.church' },
   ];
 </script>
 
@@ -37,11 +38,15 @@
     <div class="flex lg:hidden">
       <button
         type="button"
-        class="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
-        on:click={() => mobileMenuOpen = !mobileMenuOpen}
+        class="inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
+        on:click={() => (mobileMenuOpen = !mobileMenuOpen)}
       >
         <span class="sr-only">Open main menu</span>
-        <Menu class="h-6 w-6" aria-hidden="true" />
+        {#if mobileMenuOpen}
+          <X class="h-6 w-6" aria-hidden="true" />
+        {:else}
+          <Menu class="h-6 w-6" aria-hidden="true" />
+        {/if}
       </button>
     </div>
     <div class="hidden lg:flex lg:gap-x-12">

@@ -68,8 +68,9 @@
 	},
 	"dependencies": {
 		"@types/lodash": "^4.17.13",
+		"@types/node": "^22.13.14",
 		"lodash": "^4.17.21",
-		"lucide-svelte": "^0.469.0",
+		"lucide-svelte": "^0.485.0",
 		"svelte-motion": "^0.12.2"
 	}
 }
