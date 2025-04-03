@@ -32,22 +32,24 @@
             <div class="p-6">
               <p class="text-sm text-gray-500 mb-2">{formatDate(bulletin.date)}</p>
               <h3 class="text-xl font-semibold text-gray-900 mb-4">{bulletin.title}</h3>
-              {#if bulletin.pdfUrl}
+              <div class="flex gap-2">
+                {#if bulletin.pdfUrl}
+                  <a 
+                    href={bulletin.pdfUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Download PDF
+                  </a>
+                {/if}
                 <a 
-                  href={bulletin.pdfUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  href={`/bulletins/${bulletin.id}`}
+                  class="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  Download PDF
+                  View Details
                 </a>
-              {/if}
-              <a 
-                href={`/bulletins/${bulletin.id}`}
-                class="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                View Details
-              </a>
+              </div>
             </div>
           </div>
         {/each}

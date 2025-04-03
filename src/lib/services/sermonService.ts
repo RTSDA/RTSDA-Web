@@ -402,6 +402,7 @@ class SermonService {
     const sermons = await this.getSermons();
     const organized: Record<string, Record<string, Sermon[]>> = {};
 
+    // First organize sermons by year and month
     sermons.forEach(sermon => {
       const date = new Date(sermon.date);
       const year = date.getFullYear().toString();
@@ -416,21 +417,23 @@ class SermonService {
       organized[year][month].push(sermon);
     });
 
-    // Sort years in descending order
+    // Sort years in descending order (newest first)
     const sortedYears = Object.keys(organized).sort((a, b) => Number(b) - Number(a));
     
     // Create new object with sorted years and months
-    return sortedYears.reduce((acc, year) => {
-      // Get months for this year and sort them in reverse chronological order
+    const sortedOrganized = sortedYears.reduce((acc, year) => {
+      // Get months for this year and sort them by their actual month number in descending order
       const months = Object.keys(organized[year]).sort((a, b) => {
-        const monthA = new Date(Date.parse(`${a} 1, 2000`)).getMonth();
-        const monthB = new Date(Date.parse(`${b} 1, 2000`)).getMonth();
-        return monthB - monthA;
+        const monthOrder = [
+          'December', 'November', 'October', 'September', 'August', 'July',
+          'June', 'May', 'April', 'March', 'February', 'January'
+        ];
+        return monthOrder.indexOf(a) - monthOrder.indexOf(b);
       });
       
       // Add sorted months to accumulator
       acc[year] = months.reduce((monthAcc, month) => {
-        // Sort sermons within each month by date
+        // Sort sermons within each month by date (newest first)
         monthAcc[month] = organized[year][month].sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
@@ -439,6 +442,8 @@ class SermonService {
       
       return acc;
     }, {} as Record<string, Record<string, Sermon[]>>);
+
+    return sortedOrganized;
   }
 
   async getYears(): Promise<string[]> {
@@ -464,10 +469,12 @@ class SermonService {
       }
     });
 
-    // Sort months in descending order
-    return Array.from(months).sort((a, b) => {
-      return new Date(`${b} 1`).getMonth() - new Date(`${a} 1`).getMonth();
-    });
+    // Sort months in descending order using fixed month order
+    const monthOrder = [
+      'December', 'November', 'October', 'September', 'August', 'July',
+      'June', 'May', 'April', 'March', 'February', 'January'
+    ];
+    return Array.from(months).sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
   }
 
   async getSermonsForYearAndMonth(year: string, month: string): Promise<Sermon[]> {

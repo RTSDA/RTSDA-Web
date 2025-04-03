@@ -53,20 +53,27 @@
       organizedSermons = await sermonService.getSermonsByYearAndMonth();
       
       // Only expand the most recent year by default
-      const years = Object.keys(organizedSermons);
+      const years = Object.keys(organizedSermons).sort((a, b) => Number(b) - Number(a));
       if (years.length > 0) {
         // Clear any existing expanded years/months
         expandedYears.clear();
         expandedMonths.clear();
         
-        // Only expand the most recent year (first in the array since it's sorted descending)
+        // Only expand the most recent year
         const mostRecentYear = years[0];
         expandedYears.add(mostRecentYear);
         
-        const months = Object.keys(organizedSermons[mostRecentYear]);
+        // Get months for the most recent year and sort them in reverse chronological order
+        const monthOrder = [
+          'December', 'November', 'October', 'September', 'August', 'July',
+          'June', 'May', 'April', 'March', 'February', 'January'
+        ];
+        const months = Object.keys(organizedSermons[mostRecentYear])
+          .sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+        
         if (months.length > 0) {
           // Only expand the most recent month
-          const mostRecentMonth = months[0]; // First month since it's sorted descending
+          const mostRecentMonth = months[0];
           expandedMonths.add(`${mostRecentYear}-${mostRecentMonth}`);
           
           const sermons = organizedSermons[mostRecentYear][mostRecentMonth];
@@ -104,7 +111,7 @@
       <div class="p-4 text-red-600">{error}</div>
     {:else}
       <div class="divide-y divide-gray-200">
-        {#each Object.entries(organizedSermons) as [year, months]}
+        {#each Object.entries(organizedSermons).reverse() as [year, months]}
           <div class="overflow-hidden">
             <button
               class="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
@@ -120,7 +127,7 @@
             
             {#if expandedYears.has(year)}
               <div class="bg-gray-50">
-                {#each Object.entries(months) as [month, sermons]}
+                {#each Object.entries(months).reverse() as [month, sermons]}
                   <div class="border-t border-gray-200">
                     <button
                       class="w-full px-6 py-2 flex items-center justify-between hover:bg-gray-100 transition-colors"
