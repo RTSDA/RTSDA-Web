@@ -195,6 +195,7 @@
               </dt>
               <dd>
                 9 Hartford Turnpike<br />
+                PO Box 309<br />
                 Tolland, CT 06084<br />
                 <a href="mailto:info@rockvilletollandsda.org" class="hover:text-blue-600">
                   info@rockvilletollandsda.org
