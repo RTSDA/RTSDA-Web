@@ -24,23 +24,10 @@
       .filter(line => line.length > 1)
       .map(line => line.replace(/\s+/g, ' '));
 
-    // Pre-process lines to combine Bible references
-    const processedLines = lines.map((line, index) => {
-      // If this line is a Bible book and the next line is verses
-      if (
-        (line.includes('Psalm') || line.includes('Acts') || line.includes('Daniel') || line.includes('Revelation')) && 
-        index < lines.length - 1 && 
-        /^\d+(?:-\d+)?$/.test(lines[index + 1])
-      ) {
-        return `${line} ${lines[index + 1]}`;
-      }
-      // Skip the verse line if it was combined
-      if (
-        index > 0 && 
-        /^\d+(?:-\d+)?$/.test(line) && 
-        (lines[index - 1].includes('Psalm') || lines[index - 1].includes('Acts') || lines[index - 1].includes('Daniel') || lines[index - 1].includes('Revelation'))
-      ) {
-        return '';
+    // Simple processing - if it ends in a colon, it's a label
+    const processedLines = lines.map(line => {
+      if (line.endsWith(':')) {
+        return { label: line.slice(0, -1), value: '' };
       }
       return line;
     }).filter(line => line !== '');
@@ -91,29 +78,30 @@
             <div class="px-8 py-8">
               {#if section.title === 'Scripture Reading'}
                 <div class="space-y-6">
-                  {#each formatBulletinContent(section.content, section.title).filter(line => line.startsWith('Scripture Reading:')) as line}
-                    {@const content = line.replace('Scripture Reading:', '').trim()}
-                    {#if content}
-                      <div class="text-center text-xl font-semibold text-gray-900">
-                        {content}
+                  {#each formatBulletinContent(section.content, section.title) as line}
+                    {#if typeof line === 'string' && line.match(/(?:[1-3]\s+)?(?:Corinthians|John|Peter|Timothy|Thessalonians|Samuel|Kings|Chronicles|Psalm|Acts|Daniel|Revelation|Ephesians|Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|Ezra|Nehemiah|Esther|Job|Proverbs|Ecclesiastes|Isaiah|Jeremiah|Lamentations|Ezekiel|Hosea|Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|Galatians|Philippians|Colossians|Titus|Philemon|Hebrews|James|Jude)\s*\d+(?::\d+(?:-\d+)?)?/)}
+                      <div class="text-xl text-gray-900 text-center mt-6 mb-8">
+                        {line}
+                      </div>
+                    {:else if typeof line === 'string'}
+                      <div class="text-lg text-gray-700 text-center">
+                        {line}
+                      </div>
+                    {:else if typeof line === 'object' && line.label}
+                      <div class="flex flex-col items-center py-2 border-b border-gray-100 last:border-0">
+                        <dt class="text-lg text-gray-900 mb-2">{line.label}</dt>
+                        <dd class="text-lg text-gray-700">{line.value}</dd>
                       </div>
                     {/if}
-                  {/each}
-                  {#each formatBulletinContent(section.content, section.title).filter(line => !line.startsWith('Scripture Reading:')) as line}
-                    <div class="text-gray-700 whitespace-pre-line text-lg text-center">
-                      {line}
-                    </div>
                   {/each}
                 </div>
               {:else}
                 <dl class="space-y-6 text-center">
                   {#each formatBulletinContent(section.content, section.title) as line}
-                    {#if line.includes(':') && !line.match(/(?:Psalm|Acts|Daniel|Revelation)\s+\d+/)}
-                      {@const [label, ...valueParts] = line.split(':').map(s => s.trim())}
-                      {@const value = valueParts.join(':')}
+                    {#if typeof line === 'object' && line.label}
                       <div class="flex flex-col items-center py-2 border-b border-gray-100 last:border-0">
-                        <dt class="text-lg font-semibold text-gray-900 mb-2">{label}</dt>
-                        <dd class="text-lg text-gray-700">{value}</dd>
+                        <dt class="text-lg font-semibold text-gray-900 mb-2">{line.label}</dt>
+                        <dd class="text-lg text-gray-700">{line.value}</dd>
                       </div>
                     {:else}
                       <div class="text-lg text-gray-700 py-2">{line}</div>

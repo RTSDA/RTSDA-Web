@@ -64,6 +64,50 @@
     </div>
   </div>
 
+  <!-- App Download Section -->
+  <section class="bg-gradient-to-b from-gray-900 to-gray-800 py-16">
+    <div class="container-custom">
+      <Motion
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        class="max-w-3xl mx-auto text-center"
+      >
+        <h2 class="text-3xl font-bold text-white mb-4">
+          Stay Connected with Our Church App
+        </h2>
+        <p class="text-xl text-gray-300 mb-8">
+          Access live services, sermons, and church updates on the go
+        </p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a 
+            href="https://apps.apple.com/us/app/rtsda/id6738595657"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="transform transition-transform duration-200 hover:scale-105"
+          >
+            <img 
+              src="/images/app-store-badge.svg" 
+              alt="Download on the App Store" 
+              class="h-14"
+            />
+          </a>
+          <div class="relative inline-block">
+            <img
+              src="/images/google-play-badge.svg"
+              alt="Get it on Google Play"
+              class="h-12 w-auto"
+            />
+            <div class="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full transform rotate-12">
+              Coming Soon
+            </div>
+          </div>
+        </div>
+      </Motion>
+    </div>
+  </section>
+
   <!-- Upcoming Events section -->
   <section class="bg-white py-24 sm:py-32">
     <div class="container-custom">
