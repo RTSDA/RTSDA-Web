@@ -92,12 +92,24 @@
         const areaCode = truncatedDigits.slice(1, 4);
         const middle = truncatedDigits.slice(4, 7);
         const last = truncatedDigits.slice(7, 11);
-        formattedNumber = `+1 ${areaCode && `(${areaCode}`}${areaCode && middle && ')'} ${middle}${middle && last && '-'}${last}`;
+        
+        // Only add parentheses if we have all 10 digits
+        if (truncatedDigits.length >= 11) {
+          formattedNumber = `+1 (${areaCode}) ${middle}${middle && last && '-'}${last}`;
+        } else {
+          formattedNumber = `+1 ${areaCode}${areaCode && middle && ' '}${middle}${middle && last && '-'}${last}`;
+        }
       } else {
         const areaCode = truncatedDigits.slice(0, 3);
         const middle = truncatedDigits.slice(3, 6);
         const last = truncatedDigits.slice(6, 10);
-        formattedNumber = `${areaCode && `(${areaCode}`}${areaCode && middle && ')'} ${middle}${middle && last && '-'}${last}`;
+        
+        // Only add parentheses if we have all 10 digits
+        if (truncatedDigits.length === 10) {
+          formattedNumber = `(${areaCode}) ${middle}${middle && last && '-'}${last}`;
+        } else {
+          formattedNumber = `${areaCode}${areaCode && middle && ' '}${middle}${middle && last && '-'}${last}`;
+        }
       }
     }
 
