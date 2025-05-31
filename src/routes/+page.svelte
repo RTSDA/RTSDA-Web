@@ -9,6 +9,31 @@
 
 	$: androidApp = data.androidApp;
 	$: apkUrl = androidApp ? androidAppService.getApkUrl(androidApp) : null;
+
+	async function downloadApk() {
+		if (!apkUrl || !androidApp) return;
+		
+		try {
+			// Fetch the APK
+			const response = await fetch(apkUrl);
+			const blob = await response.blob();
+			
+			// Create a new blob with the correct MIME type
+			const apkBlob = new Blob([blob], { type: 'application/vnd.android.package-archive' });
+			
+			// Create download link
+			const url = URL.createObjectURL(apkBlob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `rtsda-${androidApp.version_name}.apk`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error('Failed to download APK:', error);
+		}
+	}
 </script>
 
 <div class="animate-fade-in">
@@ -99,9 +124,8 @@
 						<img src="/images/app-store-badge.svg" alt="Download on the App Store" class="h-14" />
 					</a>
 					{#if androidApp && apkUrl}
-						<a
-							href={apkUrl}
-							download={`rtsda-${androidApp.version_name}.apk`}
+						<button
+							on:click={downloadApk}
 							title={`Download RTSDA Android App v${androidApp.version_name}`}
 							class="transform transition-transform duration-200 hover:scale-105 inline-block"
 						>
@@ -114,7 +138,7 @@
 									<div class="text-xl font-medium -mt-0.5">Android</div>
 								</div>
 							</div>
-						</a>
+						</button>
 					{:else}
 						<div class="inline-block opacity-50 cursor-not-allowed">
 							<div class="bg-black text-white rounded-lg px-5 py-2.5 h-14 flex items-center gap-3 min-w-[160px]">
